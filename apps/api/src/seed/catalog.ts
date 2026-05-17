@@ -40,6 +40,9 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: "delivery.manage", description: "จัดการงานจัดส่งและข้อมูลตั้งต้น" },
   { key: "reports.view", description: "ดูรายงานและแดชบอร์ด" },
   { key: "reports.generate", description: "ออก Z-report และส่งรายงานประจำวัน" },
+  { key: "settings.manage", description: "แก้ไขการตั้งค่าระบบ" },
+  { key: "audit.view", description: "ดูบันทึกการใช้งาน" },
+  { key: "data.manage", description: "นำเข้า/ส่งออกข้อมูล" },
 ];
 
 const ALL = PERMISSIONS.map((p) => p.key);
