@@ -5,6 +5,7 @@ import { branchRoutes } from "./routes/branches.js";
 import { userRoutes } from "./routes/users.js";
 import { roleRoutes } from "./routes/roles.js";
 import { categoryRoutes } from "./routes/categories.js";
+import { productRoutes } from "./routes/products.js";
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -17,6 +18,7 @@ export function buildApp(): FastifyInstance {
   app.register(userRoutes);
   app.register(roleRoutes);
   app.register(categoryRoutes);
+  app.register(productRoutes);
 
   return app;
 }
