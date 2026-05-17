@@ -129,6 +129,30 @@ const routes: RouteRecordRaw[] = [
     component: () => import("../views/ReceiptView.vue"),
     meta: { permission: "sales.view" },
   },
+  {
+    path: "/outstanding",
+    name: "outstanding",
+    component: () => import("../views/OutstandingView.vue"),
+    meta: { permission: "sales.view" },
+  },
+  {
+    path: "/quotations",
+    name: "quotations",
+    component: () => import("../views/QuotationListView.vue"),
+    meta: { permission: "quotations.view" },
+  },
+  {
+    path: "/quotations/new",
+    name: "quotation-new",
+    component: () => import("../views/QuotationFormView.vue"),
+    meta: { permission: "quotations.manage" },
+  },
+  {
+    path: "/quotations/:id",
+    name: "quotation-detail",
+    component: () => import("../views/QuotationDetailView.vue"),
+    meta: { permission: "quotations.view" },
+  },
 ];
 
 export const router = createRouter({ history: createWebHistory(), routes });
