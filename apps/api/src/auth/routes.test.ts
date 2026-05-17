@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { buildApp } from "../app.js";
 import { prisma } from "../prisma.js";
 import { hashPassword } from "./password.js";
+import { createTestUser, sessionCookie, resetAuthTables } from "../test-helpers/auth.js";
 
 async function makeUser(opts: { password: string; isActive?: boolean }): Promise<void> {
   const role = await prisma.role.create({ data: { key: "admin", name: "Admin" } });
@@ -86,5 +87,44 @@ describe("auth routes", () => {
     const me = await app.inject({ method: "GET", url: "/api/auth/me", cookies: { fh_session: token } });
     await app.close();
     expect(me.statusCode).toBe(401);
+  });
+});
+
+describe("POST /api/auth/change-password", () => {
+  beforeEach(resetAuthTables);
+
+  it("blocks protected routes until the password is changed", async () => {
+    const userId = await createTestUser({ permissions: ["branches.view"], mustChangePassword: true });
+    const app = buildApp();
+    const cookies = await sessionCookie(userId);
+
+    const before = await app.inject({ method: "GET", url: "/api/branches", cookies });
+    expect(before.statusCode).toBe(403);
+    expect(before.json().code).toBe("MUST_CHANGE_PASSWORD");
+
+    const change = await app.inject({
+      method: "POST",
+      url: "/api/auth/change-password",
+      cookies,
+      payload: { currentPassword: "pw", newPassword: "brand-new-pw" },
+    });
+    expect(change.statusCode).toBe(200);
+
+    const after = await app.inject({ method: "GET", url: "/api/branches", cookies });
+    await app.close();
+    expect(after.statusCode).toBe(200);
+  });
+
+  it("rejects a wrong current password", async () => {
+    const userId = await createTestUser({ mustChangePassword: true });
+    const app = buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/change-password",
+      cookies: await sessionCookie(userId),
+      payload: { currentPassword: "not-pw", newPassword: "brand-new-pw" },
+    });
+    await app.close();
+    expect(res.statusCode).toBe(400);
   });
 });
