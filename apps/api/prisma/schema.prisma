@@ -73,8 +73,9 @@ model User {
   branch   Branch?   @relation(fields: [branchId], references: [id])
   sessions Session[]
 
-  stockMovements StockMovement[]
-  transfers      Transfer[]
+  stockMovements    StockMovement[]
+  transfers         Transfer[]
+  pointTransactions PointTransaction[]
 
   @@map("users")
 }
@@ -184,6 +185,44 @@ model Transfer {
   movements  StockMovement[]
 
   @@map("transfers")
+}
+
+enum PointTransactionReason {
+  EARN
+  REDEEM
+  ADJUST
+}
+
+model Customer {
+  id            Int      @id @default(autoincrement())
+  name          String
+  phone         String   @unique
+  email         String?
+  taxId         String?  @map("tax_id")
+  taxName       String?  @map("tax_name")
+  taxAddress    String?  @map("tax_address")
+  pointsBalance Int      @default(0) @map("points_balance")
+  lifetimeSpend Int      @default(0) @map("lifetime_spend")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  pointTransactions PointTransaction[]
+
+  @@map("customers")
+}
+
+model PointTransaction {
+  id         Int                    @id @default(autoincrement())
+  customerId Int                    @map("customer_id")
+  delta      Int
+  reason     PointTransactionReason
+  note       String?
+  userId     Int?                   @map("user_id")
+  createdAt  DateTime               @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id])
+
+  @@map("point_transactions")
 }
 
 model Session {
