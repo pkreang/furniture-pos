@@ -195,6 +195,24 @@ const routes: RouteRecordRaw[] = [
     component: () => import("../views/ZReportDetailView.vue"),
     meta: { permission: "reports.view" },
   },
+  {
+    path: "/settings",
+    name: "settings",
+    component: () => import("../views/SettingsView.vue"),
+    meta: { permission: "settings.manage" },
+  },
+  {
+    path: "/audit-log",
+    name: "audit-log",
+    component: () => import("../views/AuditLogView.vue"),
+    meta: { permission: "audit.view" },
+  },
+  {
+    path: "/import-export",
+    name: "import-export",
+    component: () => import("../views/ImportExportView.vue"),
+    meta: { permission: "data.manage" },
+  },
 ];
 
 export const router = createRouter({ history: createWebHistory(), routes });

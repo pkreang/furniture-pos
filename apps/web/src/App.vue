@@ -47,6 +47,9 @@ async function doLogout(): Promise<void> {
       <RouterLink v-if="auth.hasPermission('reports.view')" to="/z-reports">{{ t("zReport") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('users.view')" to="/users">{{ t("users") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('roles.view')" to="/roles">{{ t("roles") }}</RouterLink>
+      <RouterLink v-if="auth.hasPermission('settings.manage')" to="/settings">{{ t("settings") }}</RouterLink>
+      <RouterLink v-if="auth.hasPermission('audit.view')" to="/audit-log">{{ t("auditLog") }}</RouterLink>
+      <RouterLink v-if="auth.hasPermission('data.manage')" to="/import-export">{{ t("importExport") }}</RouterLink>
       <span>{{ auth.user?.name }}</span>
       <button type="button" @click="doLogout">{{ t("logout") }}</button>
     </nav>
