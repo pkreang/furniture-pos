@@ -23,6 +23,7 @@ model Branch {
   numberSequences NumberSequence[]
   quotations     Quotation[]
   deliveryTeams  DeliveryTeam[]
+  zReports       ZReport[]
 
   @@map("branches")
 }
@@ -84,6 +85,7 @@ model User {
   salesVoided       Sale[]      @relation("SaleVoidedBy")
   quotationsCreated Quotation[]
   deliveryStatusChanges DeliveryStatusHistory[]
+  zReportsGenerated ZReport[]
 
   @@map("users")
 }
@@ -508,4 +510,50 @@ model DeliveryStatusHistory {
   changedBy User?    @relation(fields: [changedById], references: [id])
 
   @@map("delivery_status_history")
+}
+
+enum ReportChannel {
+  EMAIL
+  LINE
+}
+
+enum ReportSendStatus {
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model ZReport {
+  id            Int      @id @default(autoincrement())
+  branchId      Int      @map("branch_id")
+  businessDate  DateTime @map("business_date") @db.Date
+  generatedById Int      @map("generated_by_id")
+  salesCount    Int      @map("sales_count")
+  grossTotal    Int      @map("gross_total")
+  vatTotal      Int      @map("vat_total")
+  discountTotal Int      @map("discount_total")
+  cashTotal     Int      @map("cash_total")
+  transferTotal Int      @map("transfer_total")
+  cardTotal     Int      @map("card_total")
+  voidedCount   Int      @map("voided_count")
+  voidedTotal   Int      @map("voided_total")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  branch      Branch @relation(fields: [branchId], references: [id])
+  generatedBy User   @relation(fields: [generatedById], references: [id])
+
+  @@unique([branchId, businessDate])
+  @@map("z_reports")
+}
+
+model DailyReportHistory {
+  id        Int              @id @default(autoincrement())
+  channel   ReportChannel
+  status    ReportSendStatus
+  recipient String?
+  content   String
+  error     String?
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  @@map("daily_report_history")
 }
