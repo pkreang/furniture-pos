@@ -45,6 +45,12 @@ export async function sessionCookie(userId: number): Promise<{ fh_session: strin
 
 /** Deletes all auth, catalog, stock, sales, and branch rows in FK-safe order. */
 export async function resetAuthTables(): Promise<void> {
+  await prisma.deliveryStatusHistory.deleteMany();
+  await prisma.delivery.deleteMany();
+  await prisma.driver.deleteMany();
+  await prisma.deliveryTeam.deleteMany();
+  await prisma.deliveryChannel.deleteMany();
+  await prisma.deliveryZone.deleteMany();
   await prisma.taxInvoice.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.saleItem.deleteMany();
