@@ -45,7 +45,7 @@ export async function sessionCookie(userId: number): Promise<{ fh_session: strin
 
 /** Deletes all auth, catalog, stock, and branch rows. Call in `beforeEach`. */
 export async function resetAuthTables(): Promise<void> {
-  // Catalog + stock first — they reference users, branches, and each other.
+  // Catalog + stock + customers first — they reference users, branches, and each other.
   await prisma.stockMovement.deleteMany();
   await prisma.transfer.deleteMany();
   await prisma.stockLevel.deleteMany();
@@ -53,6 +53,8 @@ export async function resetAuthTables(): Promise<void> {
   await prisma.sofaMaterial.deleteMany();
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
+  await prisma.pointTransaction.deleteMany();
+  await prisma.customer.deleteMany();
   await prisma.session.deleteMany();
   await prisma.user.deleteMany();
   await prisma.rolePermission.deleteMany();
