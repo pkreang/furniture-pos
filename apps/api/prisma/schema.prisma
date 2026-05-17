@@ -19,6 +19,8 @@ model Branch {
   stockMovements StockMovement[]
   transfersFrom  Transfer[]      @relation("TransferFrom")
   transfersTo    Transfer[]      @relation("TransferTo")
+  sales          Sale[]
+  numberSequences NumberSequence[]
 
   @@map("branches")
 }
@@ -76,6 +78,7 @@ model User {
   stockMovements    StockMovement[]
   transfers         Transfer[]
   pointTransactions PointTransaction[]
+  salesRung         Sale[]
 
   @@map("users")
 }
@@ -112,6 +115,7 @@ model Product {
   stockLevels    StockLevel[]
   stockMovements StockMovement[]
   transfers      Transfer[]
+  saleItems      SaleItem[]
 
   @@map("products")
 }
@@ -158,12 +162,14 @@ model StockMovement {
   note       String?
   userId     Int?                @map("user_id")
   transferId Int?                @map("transfer_id")
+  saleId     Int?                @map("sale_id")
   createdAt  DateTime            @default(now()) @map("created_at")
 
   product  Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   branch   Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
   user     User?     @relation(fields: [userId], references: [id])
   transfer Transfer? @relation(fields: [transferId], references: [id])
+  sale     Sale?     @relation(fields: [saleId], references: [id])
 
   @@map("stock_movements")
 }
@@ -206,6 +212,7 @@ model Customer {
   createdAt     DateTime @default(now()) @map("created_at")
 
   pointTransactions PointTransaction[]
+  sales             Sale[]
 
   @@map("customers")
 }
@@ -217,12 +224,116 @@ model PointTransaction {
   reason     PointTransactionReason
   note       String?
   userId     Int?                   @map("user_id")
+  saleId     Int?                   @map("sale_id")
   createdAt  DateTime               @default(now()) @map("created_at")
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   user     User?    @relation(fields: [userId], references: [id])
+  sale     Sale?    @relation(fields: [saleId], references: [id])
 
   @@map("point_transactions")
+}
+
+enum SaleStatus {
+  COMPLETED
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CARD
+}
+
+enum TaxInvoiceType {
+  ABBREVIATED
+  FULL
+}
+
+model NumberSequence {
+  id       Int    @id @default(autoincrement())
+  branchId Int    @map("branch_id")
+  kind     String
+  next     Int    @default(1)
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, kind])
+  @@map("number_sequences")
+}
+
+model Sale {
+  id             Int        @id @default(autoincrement())
+  number         String     @unique
+  branchId       Int        @map("branch_id")
+  customerId     Int?       @map("customer_id")
+  cashierId      Int        @map("cashier_id")
+  status         SaleStatus @default(COMPLETED)
+  subtotal       Int
+  discountAmount Int        @default(0) @map("discount_amount")
+  pointsRedeemed Int        @default(0) @map("points_redeemed")
+  total          Int
+  taxBase        Int        @map("tax_base")
+  vatAmount      Int        @map("vat_amount")
+  pointsEarned   Int        @default(0) @map("points_earned")
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  branch            Branch             @relation(fields: [branchId], references: [id])
+  customer          Customer?          @relation(fields: [customerId], references: [id])
+  cashier           User               @relation(fields: [cashierId], references: [id])
+  items             SaleItem[]
+  payments          Payment[]
+  taxInvoice        TaxInvoice?
+  stockMovements    StockMovement[]
+  pointTransactions PointTransaction[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id          Int    @id @default(autoincrement())
+  saleId      Int    @map("sale_id")
+  productId   Int    @map("product_id")
+  productName String @map("product_name")
+  unitPrice   Int    @map("unit_price")
+  quantity    Int
+  lineTotal   Int    @map("line_total")
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
+
+model Payment {
+  id     Int           @id @default(autoincrement())
+  saleId Int           @map("sale_id")
+  method PaymentMethod
+  amount Int
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model TaxInvoice {
+  id                 Int            @id @default(autoincrement())
+  saleId             Int            @unique @map("sale_id")
+  type               TaxInvoiceType
+  customerTaxId      String?        @map("customer_tax_id")
+  customerTaxName    String?        @map("customer_tax_name")
+  customerTaxAddress String?        @map("customer_tax_address")
+  createdAt          DateTime       @default(now()) @map("created_at")
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@map("tax_invoices")
+}
+
+model AppSetting {
+  key   String @id
+  value String
+
+  @@map("app_settings")
 }
 
 model Session {
