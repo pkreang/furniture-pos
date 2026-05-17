@@ -77,4 +77,11 @@ export default {
   lowStock: "สต็อกต่ำ",
   pendingDeliveries: "งานจัดส่งค้าง",
   businessDate: "วันที่",
+  settings: "ตั้งค่า",
+  auditLog: "บันทึกการใช้งาน",
+  importExport: "นำเข้า/ส่งออก",
+  exportData: "ส่งออก",
+  importData: "นำเข้า",
+  value: "ค่า",
+  result: "ผลลัพธ์",
 };

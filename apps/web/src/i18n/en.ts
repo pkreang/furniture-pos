@@ -77,4 +77,11 @@ export default {
   lowStock: "Low stock",
   pendingDeliveries: "Pending deliveries",
   businessDate: "Business date",
+  settings: "Settings",
+  auditLog: "Audit log",
+  importExport: "Import / Export",
+  exportData: "Export",
+  importData: "Import",
+  value: "Value",
+  result: "Result",
 };
