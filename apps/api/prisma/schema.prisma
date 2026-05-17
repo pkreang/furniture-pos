@@ -21,6 +21,7 @@ model Branch {
   transfersTo    Transfer[]      @relation("TransferTo")
   sales          Sale[]
   numberSequences NumberSequence[]
+  quotations     Quotation[]
 
   @@map("branches")
 }
@@ -78,7 +79,9 @@ model User {
   stockMovements    StockMovement[]
   transfers         Transfer[]
   pointTransactions PointTransaction[]
-  salesRung         Sale[]
+  salesRung         Sale[]      @relation("SaleCashier")
+  salesVoided       Sale[]      @relation("SaleVoidedBy")
+  quotationsCreated Quotation[]
 
   @@map("users")
 }
@@ -89,6 +92,7 @@ enum StockMovementReason {
   TRANSFER_OUT
   IMPORT
   SALE
+  REFUND
 }
 
 model Category {
@@ -116,6 +120,7 @@ model Product {
   stockMovements StockMovement[]
   transfers      Transfer[]
   saleItems      SaleItem[]
+  quotationItems QuotationItem[]
 
   @@map("products")
 }
@@ -197,6 +202,7 @@ enum PointTransactionReason {
   EARN
   REDEEM
   ADJUST
+  REFUND
 }
 
 model Customer {
@@ -213,6 +219,7 @@ model Customer {
 
   pointTransactions PointTransaction[]
   sales             Sale[]
+  quotations        Quotation[]
 
   @@map("customers")
 }
@@ -236,6 +243,12 @@ model PointTransaction {
 
 enum SaleStatus {
   COMPLETED
+  VOIDED
+}
+
+enum QuotationStatus {
+  OPEN
+  CONVERTED
 }
 
 enum PaymentMethod {
@@ -272,21 +285,63 @@ model Sale {
   discountAmount Int        @default(0) @map("discount_amount")
   pointsRedeemed Int        @default(0) @map("points_redeemed")
   total          Int
+  outstanding    Int        @default(0)
   taxBase        Int        @map("tax_base")
   vatAmount      Int        @map("vat_amount")
   pointsEarned   Int        @default(0) @map("points_earned")
+  voidReason     String?    @map("void_reason")
+  voidedById     Int?       @map("voided_by_id")
+  voidedAt       DateTime?  @map("voided_at")
   createdAt      DateTime   @default(now()) @map("created_at")
 
   branch            Branch             @relation(fields: [branchId], references: [id])
   customer          Customer?          @relation(fields: [customerId], references: [id])
-  cashier           User               @relation(fields: [cashierId], references: [id])
+  cashier           User               @relation("SaleCashier", fields: [cashierId], references: [id])
+  voidedBy          User?              @relation("SaleVoidedBy", fields: [voidedById], references: [id])
   items             SaleItem[]
   payments          Payment[]
   taxInvoice        TaxInvoice?
   stockMovements    StockMovement[]
   pointTransactions PointTransaction[]
+  fromQuotation     Quotation?
 
   @@map("sales")
+}
+
+model Quotation {
+  id              Int             @id @default(autoincrement())
+  number          String          @unique
+  branchId        Int             @map("branch_id")
+  customerId      Int?            @map("customer_id")
+  createdById     Int             @map("created_by_id")
+  status          QuotationStatus @default(OPEN)
+  subtotal        Int
+  note            String?
+  convertedSaleId Int?            @unique @map("converted_sale_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  branch        Branch          @relation(fields: [branchId], references: [id])
+  customer      Customer?       @relation(fields: [customerId], references: [id])
+  createdBy     User            @relation(fields: [createdById], references: [id])
+  convertedSale Sale?           @relation(fields: [convertedSaleId], references: [id])
+  items         QuotationItem[]
+
+  @@map("quotations")
+}
+
+model QuotationItem {
+  id          Int    @id @default(autoincrement())
+  quotationId Int    @map("quotation_id")
+  productId   Int    @map("product_id")
+  productName String @map("product_name")
+  unitPrice   Int    @map("unit_price")
+  quantity    Int
+  lineTotal   Int    @map("line_total")
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id])
+
+  @@map("quotation_items")
 }
 
 model SaleItem {
