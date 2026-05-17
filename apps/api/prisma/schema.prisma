@@ -86,6 +86,7 @@ model User {
   quotationsCreated Quotation[]
   deliveryStatusChanges DeliveryStatusHistory[]
   zReportsGenerated ZReport[]
+  auditLogs         AuditLog[]
 
   @@map("users")
 }
@@ -556,4 +557,17 @@ model DailyReportHistory {
   createdAt DateTime         @default(now()) @map("created_at")
 
   @@map("daily_report_history")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  method     String
+  path       String
+  statusCode Int      @map("status_code")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_log")
 }
