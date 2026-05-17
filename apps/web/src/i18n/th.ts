@@ -55,4 +55,5 @@ export default {
   validUntil: "ใช้ได้ถึง",
   convert: "แปลงเป็นบิลขาย",
   reason: "เหตุผล",
+  status: "สถานะ",
 };

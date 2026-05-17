@@ -55,4 +55,5 @@ export default {
   validUntil: "Valid until",
   convert: "Convert to sale",
   reason: "Reason",
+  status: "Status",
 };
