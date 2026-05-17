@@ -15,6 +15,11 @@ model Branch {
   createdAt   DateTime @default(now()) @map("created_at")
   users       User[]
 
+  stockLevels    StockLevel[]
+  stockMovements StockMovement[]
+  transfersFrom  Transfer[]      @relation("TransferFrom")
+  transfersTo    Transfer[]      @relation("TransferTo")
+
   @@map("branches")
 }
 
@@ -68,7 +73,117 @@ model User {
   branch   Branch?   @relation(fields: [branchId], references: [id])
   sessions Session[]
 
+  stockMovements StockMovement[]
+  transfers      Transfer[]
+
   @@map("users")
+}
+
+enum StockMovementReason {
+  ADJUST
+  TRANSFER_IN
+  TRANSFER_OUT
+  IMPORT
+  SALE
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id         Int      @id @default(autoincrement())
+  sku        String   @unique
+  name       String
+  categoryId Int      @map("category_id")
+  basePrice  Int      @map("base_price")
+  isSofa     Boolean  @default(false) @map("is_sofa")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  category       Category        @relation(fields: [categoryId], references: [id])
+  stockLevels    StockLevel[]
+  stockMovements StockMovement[]
+  transfers      Transfer[]
+
+  @@map("products")
+}
+
+model SofaMaterial {
+  id                 Int    @id @default(autoincrement())
+  key                String @unique
+  name               String
+  priceMultiplierPct Int    @map("price_multiplier_pct")
+
+  colors SofaColor[]
+
+  @@map("sofa_materials")
+}
+
+model SofaColor {
+  id         Int    @id @default(autoincrement())
+  materialId Int    @map("material_id")
+  name       String
+
+  material SofaMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@map("sofa_colors")
+}
+
+model StockLevel {
+  productId Int @map("product_id")
+  branchId  Int @map("branch_id")
+  quantity  Int @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  branch  Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@id([productId, branchId])
+  @@map("stock_levels")
+}
+
+model StockMovement {
+  id         Int                 @id @default(autoincrement())
+  productId  Int                 @map("product_id")
+  branchId   Int                 @map("branch_id")
+  delta      Int
+  reason     StockMovementReason
+  note       String?
+  userId     Int?                @map("user_id")
+  transferId Int?                @map("transfer_id")
+  createdAt  DateTime            @default(now()) @map("created_at")
+
+  product  Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  branch   Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  user     User?     @relation(fields: [userId], references: [id])
+  transfer Transfer? @relation(fields: [transferId], references: [id])
+
+  @@map("stock_movements")
+}
+
+model Transfer {
+  id           Int      @id @default(autoincrement())
+  productId    Int      @map("product_id")
+  fromBranchId Int      @map("from_branch_id")
+  toBranchId   Int      @map("to_branch_id")
+  quantity     Int
+  note         String?
+  userId       Int?     @map("user_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  product    Product         @relation(fields: [productId], references: [id])
+  fromBranch Branch          @relation("TransferFrom", fields: [fromBranchId], references: [id])
+  toBranch   Branch          @relation("TransferTo", fields: [toBranchId], references: [id])
+  user       User?           @relation(fields: [userId], references: [id])
+  movements  StockMovement[]
+
+  @@map("transfers")
 }
 
 model Session {
