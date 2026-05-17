@@ -36,6 +36,8 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: "sales.void", description: "ยกเลิกบิลและคืนเงิน" },
   { key: "quotations.view", description: "ดูใบเสนอราคา" },
   { key: "quotations.manage", description: "สร้างและแปลงใบเสนอราคา" },
+  { key: "delivery.view", description: "ดูงานจัดส่ง" },
+  { key: "delivery.manage", description: "จัดการงานจัดส่งและข้อมูลตั้งต้น" },
 ];
 
 const ALL = PERMISSIONS.map((p) => p.key);
@@ -61,6 +63,8 @@ export const ROLES: RoleDef[] = [
       "sales.void",
       "quotations.view",
       "quotations.manage",
+      "delivery.view",
+      "delivery.manage",
     ],
   },
   {
@@ -78,6 +82,8 @@ export const ROLES: RoleDef[] = [
       "sales.view",
       "quotations.view",
       "quotations.manage",
+      "delivery.view",
+      "delivery.manage",
     ],
   },
   {
@@ -93,6 +99,7 @@ export const ROLES: RoleDef[] = [
       "customers.view",
       "sales.view",
       "quotations.view",
+      "delivery.view",
     ],
   },
 ];
