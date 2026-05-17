@@ -375,8 +375,8 @@ model Branch {
   id          Int      @id @default(autoincrement())
   name        String
   code        String   @unique
-  isWarehouse Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  isWarehouse Boolean  @default(false) @map("is_warehouse")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("branches")
 }
@@ -866,7 +866,7 @@ Run `npm run db:up`, `npm run dev:api`, and `npm run dev:web` (separate terminal
 Expected: the page shows "สาขา" with the branches created by the Task 5 test, or an empty list if the test DB was used. Insert a row to confirm:
 ```bash
 docker compose exec postgres psql -U furniture -d furniture_pos -c \
-  "INSERT INTO branches (name, code, \"isWarehouse\") VALUES ('สาขาสยาม', 'BKK01', false);"
+  "INSERT INTO branches (name, code, is_warehouse) VALUES ('สาขาสยาม', 'BKK01', false);"
 ```
 Reload — the branch appears.
 
