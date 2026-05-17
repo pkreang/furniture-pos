@@ -12,6 +12,8 @@
     "prisma:migrate": "prisma migrate dev"
   },
   "dependencies": {
+    "@fastify/cookie": "^9.4.0",
+    "@fastify/rate-limit": "^9.1.0",
     "@prisma/client": "^5.20.0",
     "argon2": "^0.41.1",
     "fastify": "^4.28.1"
