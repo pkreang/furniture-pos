@@ -43,22 +43,27 @@ export async function sessionCookie(userId: number): Promise<{ fh_session: strin
   return { fh_session: await createSession(userId) };
 }
 
-/** Deletes all auth, catalog, stock, and branch rows. Call in `beforeEach`. */
+/** Deletes all auth, catalog, stock, sales, and branch rows in FK-safe order. */
 export async function resetAuthTables(): Promise<void> {
-  // Catalog + stock + customers first — they reference users, branches, and each other.
+  await prisma.taxInvoice.deleteMany();
+  await prisma.payment.deleteMany();
+  await prisma.saleItem.deleteMany();
   await prisma.stockMovement.deleteMany();
+  await prisma.pointTransaction.deleteMany();
   await prisma.transfer.deleteMany();
   await prisma.stockLevel.deleteMany();
+  await prisma.numberSequence.deleteMany();
+  await prisma.sale.deleteMany();
   await prisma.sofaColor.deleteMany();
   await prisma.sofaMaterial.deleteMany();
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
-  await prisma.pointTransaction.deleteMany();
   await prisma.customer.deleteMany();
   await prisma.session.deleteMany();
   await prisma.user.deleteMany();
   await prisma.rolePermission.deleteMany();
   await prisma.role.deleteMany();
   await prisma.permission.deleteMany();
+  await prisma.appSetting.deleteMany();
   await prisma.branch.deleteMany();
 }
