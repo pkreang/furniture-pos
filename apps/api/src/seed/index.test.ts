@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { prisma } from "../prisma.js";
 import { runSeed } from "./index.js";
-import { PERMISSIONS, ROLES } from "./catalog.js";
+import { PERMISSIONS, ROLES, SOFA_MATERIALS } from "./catalog.js";
 
 describe("runSeed", () => {
   beforeEach(async () => {
@@ -12,6 +12,8 @@ describe("runSeed", () => {
     await prisma.rolePermission.deleteMany();
     await prisma.role.deleteMany();
     await prisma.permission.deleteMany();
+    await prisma.sofaColor.deleteMany();
+    await prisma.sofaMaterial.deleteMany();
   });
 
   afterAll(async () => {
@@ -35,7 +37,21 @@ describe("runSeed", () => {
       include: { permissions: true },
     });
     expect(cashier.isBranchScoped).toBe(true);
-    expect(cashier.permissions).toHaveLength(1);
+    expect(cashier.permissions).toHaveLength(3);
+  });
+
+  it("creates sofa materials with colors, idempotently", async () => {
+    await runSeed(prisma);
+    await runSeed(prisma); // second run must not duplicate colors
+
+    expect(await prisma.sofaMaterial.count()).toBe(SOFA_MATERIALS.length);
+
+    const luxury = await prisma.sofaMaterial.findUniqueOrThrow({
+      where: { key: "luxury" },
+      include: { colors: true },
+    });
+    expect(luxury.priceMultiplierPct).toBe(210);
+    expect(luxury.colors).toHaveLength(3);
   });
 
   it("creates an admin user that must change password, and is idempotent", async () => {

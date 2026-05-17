@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../auth/password.js";
-import { PERMISSIONS, ROLES } from "./catalog.js";
+import { PERMISSIONS, ROLES, SOFA_MATERIALS } from "./catalog.js";
 
 export async function runSeed(prisma: PrismaClient): Promise<void> {
   for (const p of PERMISSIONS) {
@@ -25,6 +25,18 @@ export async function runSeed(prisma: PrismaClient): Promise<void> {
         create: { roleId: role.id, permissionId: perm.id },
       });
     }
+  }
+
+  for (const m of SOFA_MATERIALS) {
+    const material = await prisma.sofaMaterial.upsert({
+      where: { key: m.key },
+      update: { name: m.name, priceMultiplierPct: m.priceMultiplierPct },
+      create: { key: m.key, name: m.name, priceMultiplierPct: m.priceMultiplierPct },
+    });
+    await prisma.sofaColor.deleteMany({ where: { materialId: material.id } });
+    await prisma.sofaColor.createMany({
+      data: m.colors.map((name) => ({ materialId: material.id, name })),
+    });
   }
 
   const username = process.env.SEED_ADMIN_USERNAME ?? "admin";
