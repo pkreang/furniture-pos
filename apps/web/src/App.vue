@@ -1,13 +1,25 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useAuthStore } from "./stores/auth";
+import { useEventsStore } from "./stores/events";
 
 const { t } = useI18n();
 const router = useRouter();
 const auth = useAuthStore();
+const events = useEventsStore();
 const signedIn = computed(() => auth.user !== null);
+
+// Open the real-time stream once the user is signed in.
+watch(
+  signedIn,
+  (yes) => {
+    if (yes) events.connect();
+    else events.disconnect();
+  },
+  { immediate: true },
+);
 
 async function doLogout(): Promise<void> {
   await auth.logout();
@@ -19,6 +31,7 @@ async function doLogout(): Promise<void> {
   <header>
     <h1>{{ t("appName") }}</h1>
     <nav v-if="signedIn">
+      <RouterLink v-if="auth.hasPermission('reports.view')" to="/dashboard">{{ t("dashboard") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('sales.create')" to="/pos">{{ t("pos") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('sales.view')" to="/sales">{{ t("sales") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('sales.view')" to="/outstanding">{{ t("outstanding") }}</RouterLink>
@@ -31,6 +44,7 @@ async function doLogout(): Promise<void> {
       <RouterLink v-if="auth.hasPermission('stock.view')" to="/stock">{{ t("stock") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('stock.view')" to="/transfers">{{ t("transfers") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('customers.view')" to="/customers">{{ t("customers") }}</RouterLink>
+      <RouterLink v-if="auth.hasPermission('reports.view')" to="/z-reports">{{ t("zReport") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('users.view')" to="/users">{{ t("users") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('roles.view')" to="/roles">{{ t("roles") }}</RouterLink>
       <span>{{ auth.user?.name }}</span>

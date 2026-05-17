@@ -177,6 +177,24 @@ const routes: RouteRecordRaw[] = [
     component: () => import("../views/DeliverySettingsView.vue"),
     meta: { permission: "delivery.view" },
   },
+  {
+    path: "/dashboard",
+    name: "dashboard",
+    component: () => import("../views/DashboardView.vue"),
+    meta: { permission: "reports.view" },
+  },
+  {
+    path: "/z-reports",
+    name: "z-reports",
+    component: () => import("../views/ZReportListView.vue"),
+    meta: { permission: "reports.view" },
+  },
+  {
+    path: "/z-reports/:id",
+    name: "z-report-detail",
+    component: () => import("../views/ZReportDetailView.vue"),
+    meta: { permission: "reports.view" },
+  },
 ];
 
 export const router = createRouter({ history: createWebHistory(), routes });
