@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { transferStock, StockError } from "../stock/service.js";
+import { emitAppEvent } from "../events/bus.js";
 
 export async function transferRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -60,6 +61,7 @@ export async function transferRoutes(app: FastifyInstance): Promise<void> {
       }
       try {
         const transfer = await transferStock({ ...body, userId: user.id });
+        emitAppEvent({ type: "stock.changed", payload: { transferId: transfer.id } });
         return reply.code(201).send(transfer);
       } catch (err) {
         if (err instanceof StockError) {

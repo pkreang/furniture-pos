@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "../prisma.js";
 import { branchFilter } from "../auth/branch-scope.js";
 import { applyStockMovement, StockError } from "../stock/service.js";
+import { emitAppEvent } from "../events/bus.js";
 
 export async function stockRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -67,6 +68,7 @@ export async function stockRoutes(app: FastifyInstance): Promise<void> {
             userId: user.id,
           }),
         );
+        emitAppEvent({ type: "stock.changed", payload: { branchId: body.branchId } });
         return { productId: body.productId, branchId: body.branchId, quantity };
       } catch (err) {
         if (err instanceof StockError) {

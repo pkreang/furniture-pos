@@ -5,6 +5,7 @@ import { checkout, CheckoutError } from "../sales/checkout.js";
 import { voidSale, VoidError } from "../sales/void.js";
 import { StockError } from "../stock/service.js";
 import { PointError } from "../membership/points.js";
+import { emitAppEvent } from "../events/bus.js";
 
 interface CheckoutBody {
   branchId: number;
@@ -76,6 +77,7 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
           redeemPoints: body.redeemPoints,
           maxDiscountPercent: user.discountMaxPercent,
         });
+        emitAppEvent({ type: "sale.completed", payload: { saleId: sale.id, branchId: sale.branchId } });
         return reply.code(201).send(sale);
       } catch (err) {
         if (err instanceof CheckoutError) {

@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { Prisma, DeliveryStatus } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { createDelivery, changeDeliveryStatus, DeliveryError } from "../delivery/service.js";
+import { emitAppEvent } from "../events/bus.js";
 
 const DELIVERY_STATUSES = [
   "PENDING",
@@ -76,6 +77,7 @@ export async function deliveryRoutes(app: FastifyInstance): Promise<void> {
           note: body.note,
           createdById: user.id,
         });
+        emitAppEvent({ type: "delivery.updated", payload: { deliveryId: delivery.id } });
         return reply.code(201).send(delivery);
       } catch (err) {
         if (err instanceof DeliveryError) {
@@ -184,7 +186,9 @@ export async function deliveryRoutes(app: FastifyInstance): Promise<void> {
         return reply.code(403).send({ code: "BRANCH_FORBIDDEN", message: "ทำได้เฉพาะสาขาของตนเอง" });
       }
       try {
-        return await changeDeliveryStatus(id, body.status, user.id, body.note);
+        const updated = await changeDeliveryStatus(id, body.status, user.id, body.note);
+        emitAppEvent({ type: "delivery.updated", payload: { deliveryId: id } });
+        return updated;
       } catch (err) {
         if (err instanceof DeliveryError) {
           return reply.code(400).send({ code: err.code, message: err.message });

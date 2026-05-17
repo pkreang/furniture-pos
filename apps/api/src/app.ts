@@ -15,6 +15,7 @@ import { deliveryConfigRoutes } from "./routes/delivery-config.js";
 import { deliveryRoutes } from "./routes/deliveries.js";
 import { reportRoutes } from "./routes/reports.js";
 import { dailyReportRoutes } from "./routes/daily-report.js";
+import { eventRoutes } from "./routes/events.js";
 import { settingsRoutes } from "./routes/settings.js";
 
 export function buildApp(): FastifyInstance {
@@ -38,6 +39,7 @@ export function buildApp(): FastifyInstance {
   app.register(deliveryRoutes);
   app.register(reportRoutes);
   app.register(dailyReportRoutes);
+  app.register(eventRoutes);
   app.register(settingsRoutes);
 
   return app;
