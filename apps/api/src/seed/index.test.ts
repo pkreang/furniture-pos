@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { prisma } from "../prisma.js";
+import { resetAuthTables } from "../test-helpers/auth.js";
 import { runSeed } from "./index.js";
 import { PERMISSIONS, ROLES, SOFA_MATERIALS, APP_SETTINGS } from "./catalog.js";
 
@@ -7,13 +8,7 @@ describe("runSeed", () => {
   beforeEach(async () => {
     process.env.SEED_ADMIN_USERNAME = "admin";
     process.env.SEED_ADMIN_PASSWORD = "seed-test-pw";
-    await prisma.session.deleteMany();
-    await prisma.user.deleteMany();
-    await prisma.rolePermission.deleteMany();
-    await prisma.role.deleteMany();
-    await prisma.permission.deleteMany();
-    await prisma.sofaColor.deleteMany();
-    await prisma.sofaMaterial.deleteMany();
+    await resetAuthTables();
   });
 
   afterAll(async () => {

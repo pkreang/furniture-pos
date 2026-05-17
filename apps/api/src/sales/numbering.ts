@@ -26,3 +26,8 @@ export async function nextNumber(
 export function formatSaleNumber(branchCode: string, n: number): string {
   return `${branchCode}-${String(n).padStart(6, "0")}`;
 }
+
+/** Formats a quotation number, e.g. `formatQuotationNumber("BKK01", 1)` → `"BKK01-Q000001"`. */
+export function formatQuotationNumber(branchCode: string, n: number): string {
+  return `${branchCode}-Q${String(n).padStart(6, "0")}`;
+}

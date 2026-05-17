@@ -54,6 +54,18 @@ export type CheckoutResult = Prisma.SaleGetPayload<{ include: typeof saleInclude
  * rolls the whole transaction back.
  */
 export async function checkout(args: CheckoutArgs): Promise<CheckoutResult> {
+  return prisma.$transaction((tx) => checkoutInTx(tx, args));
+}
+
+/**
+ * The checkout body, runnable inside a caller-supplied transaction — used by
+ * `checkout` and by quotation conversion so the sale and the quotation status
+ * flip commit together.
+ */
+export async function checkoutInTx(
+  tx: Prisma.TransactionClient,
+  args: CheckoutArgs,
+): Promise<CheckoutResult> {
   const discountPercent = args.discountPercent ?? 0;
   const redeemPoints = args.redeemPoints ?? 0;
 
@@ -76,7 +88,7 @@ export async function checkout(args: CheckoutArgs): Promise<CheckoutResult> {
     throw new CheckoutError("REDEEM_WITHOUT_CUSTOMER", "ต้องระบุลูกค้าเพื่อใช้แต้ม");
   }
 
-  return prisma.$transaction(async (tx) => {
+  {
     const branch = await tx.branch.findUnique({ where: { id: args.branchId } });
     if (!branch) throw new CheckoutError("BRANCH_NOT_FOUND", "ไม่พบสาขา");
     if (branch.isWarehouse) {
@@ -198,5 +210,5 @@ export async function checkout(args: CheckoutArgs): Promise<CheckoutResult> {
     }
 
     return tx.sale.findUniqueOrThrow({ where: { id: sale.id }, include: saleInclude });
-  });
+  }
 }

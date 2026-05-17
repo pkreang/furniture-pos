@@ -53,6 +53,8 @@ export async function resetAuthTables(): Promise<void> {
   await prisma.transfer.deleteMany();
   await prisma.stockLevel.deleteMany();
   await prisma.numberSequence.deleteMany();
+  await prisma.quotationItem.deleteMany();
+  await prisma.quotation.deleteMany();
   await prisma.sale.deleteMany();
   await prisma.sofaColor.deleteMany();
   await prisma.sofaMaterial.deleteMany();
