@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { prisma } from "../prisma.js";
+import { resetAuthTables } from "../test-helpers/auth.js";
 import { createSession, findSessionUser, revokeSession, hashToken } from "./session.js";
 
 async function makeUser(): Promise<number> {
@@ -11,12 +12,7 @@ async function makeUser(): Promise<number> {
 }
 
 describe("session service", () => {
-  beforeEach(async () => {
-    await prisma.session.deleteMany();
-    await prisma.user.deleteMany();
-    await prisma.rolePermission.deleteMany();
-    await prisma.role.deleteMany();
-  });
+  beforeEach(resetAuthTables);
 
   afterAll(async () => {
     await prisma.$disconnect();

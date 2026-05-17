@@ -19,12 +19,7 @@ async function makeUser(opts: { password: string; isActive?: boolean }): Promise
 }
 
 describe("auth routes", () => {
-  beforeEach(async () => {
-    await prisma.session.deleteMany();
-    await prisma.user.deleteMany();
-    await prisma.rolePermission.deleteMany();
-    await prisma.role.deleteMany();
-  });
+  beforeEach(resetAuthTables);
 
   afterAll(async () => {
     await prisma.$disconnect();

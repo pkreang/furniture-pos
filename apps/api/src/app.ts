@@ -14,6 +14,7 @@ import { quotationRoutes } from "./routes/quotations.js";
 import { deliveryConfigRoutes } from "./routes/delivery-config.js";
 import { deliveryRoutes } from "./routes/deliveries.js";
 import { reportRoutes } from "./routes/reports.js";
+import { dailyReportRoutes } from "./routes/daily-report.js";
 import { settingsRoutes } from "./routes/settings.js";
 
 export function buildApp(): FastifyInstance {
@@ -36,6 +37,7 @@ export function buildApp(): FastifyInstance {
   app.register(deliveryConfigRoutes);
   app.register(deliveryRoutes);
   app.register(reportRoutes);
+  app.register(dailyReportRoutes);
   app.register(settingsRoutes);
 
   return app;
