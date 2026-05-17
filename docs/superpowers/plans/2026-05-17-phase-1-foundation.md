@@ -240,15 +240,16 @@ git commit -m "chore: add PostgreSQL docker-compose for development"
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
+    "module": "Node16",
+    "moduleResolution": "node16",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
 }
 ```
 
@@ -274,7 +275,7 @@ Expected: completes without error; `apps/api/node_modules` exists.
 
 ```typescript
 import { describe, it, expect } from "vitest";
-import { buildApp } from "./app";
+import { buildApp } from "./app.js";
 
 describe("GET /health", () => {
   it("returns status ok", async () => {
@@ -314,7 +315,7 @@ Expected: PASS — 1 test passed.
 - [ ] **Step 9: Create `apps/api/src/server.ts`**
 
 ```typescript
-import { buildApp } from "./app";
+import { buildApp } from "./app.js";
 
 const app = buildApp();
 const port = Number(process.env.API_PORT ?? 3000);
@@ -447,8 +448,8 @@ export default defineConfig({
 
 ```typescript
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
-import { buildApp } from "../app";
-import { prisma } from "../prisma";
+import { buildApp } from "../app.js";
+import { prisma } from "../prisma.js";
 
 describe("GET /api/branches", () => {
   beforeEach(async () => {
@@ -485,7 +486,7 @@ Expected: FAIL — route `/api/branches` returns 404.
 
 ```typescript
 import type { FastifyInstance } from "fastify";
-import { prisma } from "../prisma";
+import { prisma } from "../prisma.js";
 
 export async function branchRoutes(app: FastifyInstance): Promise<void> {
   app.get("/api/branches", async () => {
@@ -498,7 +499,7 @@ export async function branchRoutes(app: FastifyInstance): Promise<void> {
 
 ```typescript
 import Fastify, { type FastifyInstance } from "fastify";
-import { branchRoutes } from "./routes/branches";
+import { branchRoutes } from "./routes/branches.js";
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: false });
