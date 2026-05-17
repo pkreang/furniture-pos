@@ -9,6 +9,7 @@ interface PointArgs {
   reason: PointTransactionReason;
   note?: string;
   userId?: number;
+  saleId?: number;
 }
 
 /**
@@ -37,6 +38,7 @@ export async function applyPointTransaction(
       reason: args.reason,
       note: args.note,
       userId: args.userId,
+      saleId: args.saleId,
     },
   });
 
