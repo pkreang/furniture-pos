@@ -46,4 +46,13 @@ export default {
   redeemPoints: "Redeem points",
   taxInvoice: "Tax invoice",
   change: "Change",
+  void: "Void sale",
+  voided: "Voided",
+  settle: "Settle balance",
+  outstanding: "Outstanding",
+  quotations: "Quotations",
+  quotation: "Quotation",
+  validUntil: "Valid until",
+  convert: "Convert to sale",
+  reason: "Reason",
 };

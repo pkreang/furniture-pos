@@ -29,13 +29,16 @@ export interface Sale {
   number: string;
   branchId: number;
   customerId: number | null;
+  status: "COMPLETED" | "VOIDED";
   subtotal: number;
   discountAmount: number;
   pointsRedeemed: number;
   total: number;
+  outstanding: number;
   taxBase: number;
   vatAmount: number;
   pointsEarned: number;
+  voidReason: string | null;
   createdAt: string;
   items?: SaleItem[];
   payments?: Payment[];
@@ -65,6 +68,18 @@ export function fetchSales(): Promise<Sale[]> {
 
 export function fetchSale(id: number): Promise<Sale> {
   return apiGet<Sale>(`/api/sales/${id}`);
+}
+
+export function fetchOutstanding(): Promise<Sale[]> {
+  return apiGet<Sale[]>("/api/sales/outstanding");
+}
+
+export function voidSale(id: number, reason: string): Promise<Sale> {
+  return apiSend<Sale>("POST", `/api/sales/${id}/void`, { reason });
+}
+
+export function settleSale(id: number, method: PaymentMethod, amount: number): Promise<Sale> {
+  return apiSend<Sale>("POST", `/api/sales/${id}/settle`, { method, amount });
 }
 
 export function fetchSettings(): Promise<Record<string, string>> {

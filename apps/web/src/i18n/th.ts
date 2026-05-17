@@ -46,4 +46,13 @@ export default {
   redeemPoints: "ใช้แต้มสะสม",
   taxInvoice: "ใบกำกับภาษี",
   change: "เงินทอน",
+  void: "ยกเลิกบิล",
+  voided: "ยกเลิกแล้ว",
+  settle: "ชำระยอดค้าง",
+  outstanding: "ยอดค้างชำระ",
+  quotations: "ใบเสนอราคา",
+  quotation: "ใบเสนอราคา",
+  validUntil: "ใช้ได้ถึง",
+  convert: "แปลงเป็นบิลขาย",
+  reason: "เหตุผล",
 };
