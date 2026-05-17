@@ -37,7 +37,7 @@ describe("runSeed", () => {
       include: { permissions: true },
     });
     expect(cashier.isBranchScoped).toBe(true);
-    expect(cashier.permissions).toHaveLength(3);
+    expect(cashier.permissions).toHaveLength(5);
   });
 
   it("creates sofa materials with colors, idempotently", async () => {

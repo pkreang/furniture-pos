@@ -29,6 +29,8 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: "catalog.manage", description: "เพิ่ม/แก้ไขสินค้าและหมวดหมู่" },
   { key: "stock.view", description: "ดูสต็อกสินค้า" },
   { key: "stock.adjust", description: "ปรับสต็อกและโอนสินค้าระหว่างสาขา" },
+  { key: "customers.view", description: "ดูข้อมูลลูกค้า" },
+  { key: "customers.manage", description: "เพิ่ม/แก้ไขลูกค้าและปรับแต้มสะสม" },
 ];
 
 const ALL = PERMISSIONS.map((p) => p.key);
@@ -41,21 +43,29 @@ export const ROLES: RoleDef[] = [
     name: "ผู้จัดการสาขา",
     isBranchScoped: true,
     discountMaxPercent: 15,
-    permissions: ["users.view", "branches.view", "catalog.view", "stock.view", "stock.adjust"],
+    permissions: [
+      "users.view",
+      "branches.view",
+      "catalog.view",
+      "stock.view",
+      "stock.adjust",
+      "customers.view",
+      "customers.manage",
+    ],
   },
   {
     key: "cashier",
     name: "พนักงานขาย",
     isBranchScoped: true,
     discountMaxPercent: 5,
-    permissions: ["branches.view", "catalog.view", "stock.view"],
+    permissions: ["branches.view", "catalog.view", "stock.view", "customers.view", "customers.manage"],
   },
   {
     key: "account",
     name: "บัญชี",
     isBranchScoped: false,
     discountMaxPercent: 0,
-    permissions: ["users.view", "branches.view", "catalog.view", "stock.view"],
+    permissions: ["users.view", "branches.view", "catalog.view", "stock.view", "customers.view"],
   },
 ];
 
