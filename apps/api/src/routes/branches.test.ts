@@ -12,8 +12,8 @@ describe("GET /api/branches", () => {
   });
 
   it("returns all branches ordered by id", async () => {
-    await prisma.branch.create({ data: { name: "คลังกลาง", code: "WH01", isWarehouse: true } });
     await prisma.branch.create({ data: { name: "สาขาสยาม", code: "BKK01" } });
+    await prisma.branch.create({ data: { name: "คลังกลาง", code: "WH01", isWarehouse: true } });
 
     const app = buildApp();
     const res = await app.inject({ method: "GET", url: "/api/branches" });
