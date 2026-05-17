@@ -68,4 +68,13 @@ export default {
   address: "Address",
   deliverySettings: "Delivery settings",
   book: "Book delivery",
+  dashboard: "Dashboard",
+  reports: "Reports",
+  zReport: "Z-report",
+  generate: "Generate",
+  dailyReport: "Daily report",
+  today: "Today",
+  lowStock: "Low stock",
+  pendingDeliveries: "Pending deliveries",
+  businessDate: "Business date",
 };

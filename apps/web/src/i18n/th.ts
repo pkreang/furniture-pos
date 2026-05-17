@@ -68,4 +68,13 @@ export default {
   address: "ที่อยู่",
   deliverySettings: "ตั้งค่าการจัดส่ง",
   book: "เปิดงานจัดส่ง",
+  dashboard: "แดชบอร์ด",
+  reports: "รายงาน",
+  zReport: "Z-report",
+  generate: "ออกรายงาน",
+  dailyReport: "รายงานประจำวัน",
+  today: "วันนี้",
+  lowStock: "สต็อกต่ำ",
+  pendingDeliveries: "งานจัดส่งค้าง",
+  businessDate: "วันที่",
 };
