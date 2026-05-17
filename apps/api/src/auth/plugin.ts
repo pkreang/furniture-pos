@@ -9,7 +9,8 @@ export const SESSION_COOKIE = "fh_session";
 
 async function authPlugin(app: FastifyInstance): Promise<void> {
   await app.register(cookie);
-  await app.register(rateLimit, { global: false });
+  // Global per-IP cap; the login route narrows this further to 5/min.
+  await app.register(rateLimit, { global: true, max: 300, timeWindow: "1 minute" });
 
   app.decorateRequest("user", undefined);
   app.decorateRequest("sessionToken", undefined);
