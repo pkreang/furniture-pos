@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { prisma } from "../prisma.js";
 import { runSeed } from "./index.js";
-import { PERMISSIONS, ROLES, SOFA_MATERIALS } from "./catalog.js";
+import { PERMISSIONS, ROLES, SOFA_MATERIALS, APP_SETTINGS } from "./catalog.js";
 
 describe("runSeed", () => {
   beforeEach(async () => {
@@ -37,7 +37,16 @@ describe("runSeed", () => {
       include: { permissions: true },
     });
     expect(cashier.isBranchScoped).toBe(true);
-    expect(cashier.permissions).toHaveLength(5);
+    expect(cashier.permissions).toHaveLength(7);
+  });
+
+  it("seeds the company app settings idempotently", async () => {
+    await runSeed(prisma);
+    await runSeed(prisma);
+
+    expect(await prisma.appSetting.count()).toBe(Object.keys(APP_SETTINGS).length);
+    const name = await prisma.appSetting.findUniqueOrThrow({ where: { key: "company.name" } });
+    expect(name.value).toBe(APP_SETTINGS["company.name"]);
   });
 
   it("creates sofa materials with colors, idempotently", async () => {

@@ -31,6 +31,8 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: "stock.adjust", description: "ปรับสต็อกและโอนสินค้าระหว่างสาขา" },
   { key: "customers.view", description: "ดูข้อมูลลูกค้า" },
   { key: "customers.manage", description: "เพิ่ม/แก้ไขลูกค้าและปรับแต้มสะสม" },
+  { key: "sales.create", description: "ขายสินค้า (เปิดบิล)" },
+  { key: "sales.view", description: "ดูประวัติการขาย" },
 ];
 
 const ALL = PERMISSIONS.map((p) => p.key);
@@ -51,6 +53,8 @@ export const ROLES: RoleDef[] = [
       "stock.adjust",
       "customers.view",
       "customers.manage",
+      "sales.create",
+      "sales.view",
     ],
   },
   {
@@ -58,14 +62,22 @@ export const ROLES: RoleDef[] = [
     name: "พนักงานขาย",
     isBranchScoped: true,
     discountMaxPercent: 5,
-    permissions: ["branches.view", "catalog.view", "stock.view", "customers.view", "customers.manage"],
+    permissions: [
+      "branches.view",
+      "catalog.view",
+      "stock.view",
+      "customers.view",
+      "customers.manage",
+      "sales.create",
+      "sales.view",
+    ],
   },
   {
     key: "account",
     name: "บัญชี",
     isBranchScoped: false,
     discountMaxPercent: 0,
-    permissions: ["users.view", "branches.view", "catalog.view", "stock.view", "customers.view"],
+    permissions: ["users.view", "branches.view", "catalog.view", "stock.view", "customers.view", "sales.view"],
   },
 ];
 
@@ -75,3 +87,10 @@ export const SOFA_MATERIALS: SofaMaterialDef[] = [
   { key: "premium", name: "หนังเทียม", priceMultiplierPct: 165, colors: ["ดำ", "น้ำตาลเข้ม", "ขาว"] },
   { key: "luxury", name: "หนังแท้", priceMultiplierPct: 210, colors: ["ดำเงา", "คอนยัค", "เบจ"] },
 ];
+
+export const APP_SETTINGS: Record<string, string> = {
+  "company.name": "เฟอร์นิเจอร์ เฮาส์ จำกัด",
+  "company.taxId": "0000000000000",
+  "company.address": "สำนักงานใหญ่ กรุงเทพมหานคร",
+  "company.phone": "02-000-0000",
+};

@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../auth/password.js";
-import { PERMISSIONS, ROLES, SOFA_MATERIALS } from "./catalog.js";
+import { PERMISSIONS, ROLES, SOFA_MATERIALS, APP_SETTINGS } from "./catalog.js";
 
 export async function runSeed(prisma: PrismaClient): Promise<void> {
   for (const p of PERMISSIONS) {
@@ -36,6 +36,14 @@ export async function runSeed(prisma: PrismaClient): Promise<void> {
     await prisma.sofaColor.deleteMany({ where: { materialId: material.id } });
     await prisma.sofaColor.createMany({
       data: m.colors.map((name) => ({ materialId: material.id, name })),
+    });
+  }
+
+  for (const [key, value] of Object.entries(APP_SETTINGS)) {
+    await prisma.appSetting.upsert({
+      where: { key },
+      update: {},
+      create: { key, value },
     });
   }
 
