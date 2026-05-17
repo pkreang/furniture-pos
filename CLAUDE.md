@@ -2,6 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ Repository status: production rebuild in progress
+
+This repository is being rebuilt into a production system. The original vanilla
+HTML/CSS/JS demo described below has been **moved to `legacy-demo/`** and is kept
+for reference only.
+
+The new system is a Node monorepo (npm workspaces): `apps/api` (Fastify + Prisma)
+and `apps/web` (Vue 3 + Vite). See `README.md` for local development, and
+`docs/superpowers/specs/` and `docs/superpowers/plans/` for the design and plans.
+
+The sections below document the **legacy demo** (now under `legacy-demo/`). They
+will be rewritten for the new architecture as that work progresses.
+
 ## What this is
 
 A multi-branch furniture-store POS web app (Thai-language UI). It is a single-page
