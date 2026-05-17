@@ -22,6 +22,7 @@ model Branch {
   sales          Sale[]
   numberSequences NumberSequence[]
   quotations     Quotation[]
+  deliveryTeams  DeliveryTeam[]
 
   @@map("branches")
 }
@@ -82,6 +83,7 @@ model User {
   salesRung         Sale[]      @relation("SaleCashier")
   salesVoided       Sale[]      @relation("SaleVoidedBy")
   quotationsCreated Quotation[]
+  deliveryStatusChanges DeliveryStatusHistory[]
 
   @@map("users")
 }
@@ -304,6 +306,7 @@ model Sale {
   stockMovements    StockMovement[]
   pointTransactions PointTransaction[]
   fromQuotation     Quotation?
+  delivery          Delivery?
 
   @@map("sales")
 }
@@ -401,4 +404,108 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
+}
+
+enum DeliveryChannelType {
+  IN_HOUSE
+  COURIER
+}
+
+enum DeliveryStatus {
+  PENDING
+  SCHEDULED
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+model DeliveryZone {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  fee       Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  deliveries Delivery[]
+
+  @@map("delivery_zones")
+}
+
+model DeliveryChannel {
+  id        Int                 @id @default(autoincrement())
+  name      String              @unique
+  type      DeliveryChannelType
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  deliveries Delivery[]
+
+  @@map("delivery_channels")
+}
+
+model DeliveryTeam {
+  id        Int      @id @default(autoincrement())
+  name      String
+  branchId  Int      @map("branch_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  branch     Branch     @relation(fields: [branchId], references: [id])
+  drivers    Driver[]
+  deliveries Delivery[]
+
+  @@map("delivery_teams")
+}
+
+model Driver {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  teamId    Int      @map("team_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team       DeliveryTeam @relation(fields: [teamId], references: [id])
+  deliveries Delivery[]
+
+  @@map("drivers")
+}
+
+model Delivery {
+  id             Int            @id @default(autoincrement())
+  saleId         Int            @unique @map("sale_id")
+  zoneId         Int            @map("zone_id")
+  channelId      Int            @map("channel_id")
+  teamId         Int?           @map("team_id")
+  driverId       Int?           @map("driver_id")
+  status         DeliveryStatus @default(PENDING)
+  scheduledDate  DateTime       @map("scheduled_date")
+  timeSlot       String?        @map("time_slot")
+  addressText    String         @map("address_text")
+  recipientName  String?        @map("recipient_name")
+  recipientPhone String?        @map("recipient_phone")
+  fee            Int            @default(0)
+  note           String?
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  sale    Sale            @relation(fields: [saleId], references: [id])
+  zone    DeliveryZone    @relation(fields: [zoneId], references: [id])
+  channel DeliveryChannel @relation(fields: [channelId], references: [id])
+  team    DeliveryTeam?   @relation(fields: [teamId], references: [id])
+  driver  Driver?         @relation(fields: [driverId], references: [id])
+  history DeliveryStatusHistory[]
+
+  @@map("deliveries")
+}
+
+model DeliveryStatusHistory {
+  id          Int            @id @default(autoincrement())
+  deliveryId  Int            @map("delivery_id")
+  status      DeliveryStatus
+  note        String?
+  changedById Int?           @map("changed_by_id")
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  delivery  Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  changedBy User?    @relation(fields: [changedById], references: [id])
+
+  @@map("delivery_status_history")
 }
