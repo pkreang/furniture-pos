@@ -13,6 +13,561 @@ model Branch {
   code        String   @unique
   isWarehouse Boolean  @default(false) @map("is_warehouse")
   createdAt   DateTime @default(now()) @map("created_at")
+  users       User[]
+
+  stockLevels    StockLevel[]
+  stockMovements StockMovement[]
+  transfersFrom  Transfer[]      @relation("TransferFrom")
+  transfersTo    Transfer[]      @relation("TransferTo")
+  sales          Sale[]
+  numberSequences NumberSequence[]
+  quotations     Quotation[]
+  deliveryTeams  DeliveryTeam[]
+  zReports       ZReport[]
 
   @@map("branches")
+}
+
+model Role {
+  id                 Int      @id @default(autoincrement())
+  key                String   @unique
+  name               String
+  isBranchScoped     Boolean  @default(false) @map("is_branch_scoped")
+  discountMaxPercent Int?     @map("discount_max_percent")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  permissions RolePermission[]
+  users       User[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          Int    @id @default(autoincrement())
+  key         String @unique
+  description String
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       Int @map("role_id")
+  permissionId Int @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model User {
+  id                 Int      @id @default(autoincrement())
+  username           String   @unique
+  passwordHash       String   @map("password_hash")
+  name               String
+  roleId             Int      @map("role_id")
+  branchId           Int?     @map("branch_id")
+  isActive           Boolean  @default(true) @map("is_active")
+  mustChangePassword Boolean  @default(true) @map("must_change_password")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  role     Role      @relation(fields: [roleId], references: [id])
+  branch   Branch?   @relation(fields: [branchId], references: [id])
+  sessions Session[]
+
+  stockMovements    StockMovement[]
+  transfers         Transfer[]
+  pointTransactions PointTransaction[]
+  salesRung         Sale[]      @relation("SaleCashier")
+  salesVoided       Sale[]      @relation("SaleVoidedBy")
+  quotationsCreated Quotation[]
+  deliveryStatusChanges DeliveryStatusHistory[]
+  zReportsGenerated ZReport[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+enum StockMovementReason {
+  ADJUST
+  TRANSFER_IN
+  TRANSFER_OUT
+  IMPORT
+  SALE
+  REFUND
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id         Int      @id @default(autoincrement())
+  sku        String   @unique
+  name       String
+  categoryId Int      @map("category_id")
+  basePrice  Int      @map("base_price")
+  isSofa     Boolean  @default(false) @map("is_sofa")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  category       Category        @relation(fields: [categoryId], references: [id])
+  stockLevels    StockLevel[]
+  stockMovements StockMovement[]
+  transfers      Transfer[]
+  saleItems      SaleItem[]
+  quotationItems QuotationItem[]
+
+  @@map("products")
+}
+
+model SofaMaterial {
+  id                 Int    @id @default(autoincrement())
+  key                String @unique
+  name               String
+  priceMultiplierPct Int    @map("price_multiplier_pct")
+
+  colors SofaColor[]
+
+  @@map("sofa_materials")
+}
+
+model SofaColor {
+  id         Int    @id @default(autoincrement())
+  materialId Int    @map("material_id")
+  name       String
+
+  material SofaMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@map("sofa_colors")
+}
+
+model StockLevel {
+  productId Int @map("product_id")
+  branchId  Int @map("branch_id")
+  quantity  Int @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  branch  Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@id([productId, branchId])
+  @@map("stock_levels")
+}
+
+model StockMovement {
+  id         Int                 @id @default(autoincrement())
+  productId  Int                 @map("product_id")
+  branchId   Int                 @map("branch_id")
+  delta      Int
+  reason     StockMovementReason
+  note       String?
+  userId     Int?                @map("user_id")
+  transferId Int?                @map("transfer_id")
+  saleId     Int?                @map("sale_id")
+  createdAt  DateTime            @default(now()) @map("created_at")
+
+  product  Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  branch   Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  user     User?     @relation(fields: [userId], references: [id])
+  transfer Transfer? @relation(fields: [transferId], references: [id])
+  sale     Sale?     @relation(fields: [saleId], references: [id])
+
+  @@map("stock_movements")
+}
+
+model Transfer {
+  id           Int      @id @default(autoincrement())
+  productId    Int      @map("product_id")
+  fromBranchId Int      @map("from_branch_id")
+  toBranchId   Int      @map("to_branch_id")
+  quantity     Int
+  note         String?
+  userId       Int?     @map("user_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  product    Product         @relation(fields: [productId], references: [id])
+  fromBranch Branch          @relation("TransferFrom", fields: [fromBranchId], references: [id])
+  toBranch   Branch          @relation("TransferTo", fields: [toBranchId], references: [id])
+  user       User?           @relation(fields: [userId], references: [id])
+  movements  StockMovement[]
+
+  @@map("transfers")
+}
+
+enum PointTransactionReason {
+  EARN
+  REDEEM
+  ADJUST
+  REFUND
+}
+
+model Customer {
+  id            Int      @id @default(autoincrement())
+  name          String
+  phone         String   @unique
+  email         String?
+  taxId         String?  @map("tax_id")
+  taxName       String?  @map("tax_name")
+  taxAddress    String?  @map("tax_address")
+  pointsBalance Int      @default(0) @map("points_balance")
+  lifetimeSpend Int      @default(0) @map("lifetime_spend")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  pointTransactions PointTransaction[]
+  sales             Sale[]
+  quotations        Quotation[]
+
+  @@map("customers")
+}
+
+model PointTransaction {
+  id         Int                    @id @default(autoincrement())
+  customerId Int                    @map("customer_id")
+  delta      Int
+  reason     PointTransactionReason
+  note       String?
+  userId     Int?                   @map("user_id")
+  saleId     Int?                   @map("sale_id")
+  createdAt  DateTime               @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id])
+  sale     Sale?    @relation(fields: [saleId], references: [id])
+
+  @@map("point_transactions")
+}
+
+enum SaleStatus {
+  COMPLETED
+  VOIDED
+}
+
+enum QuotationStatus {
+  OPEN
+  CONVERTED
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CARD
+}
+
+enum TaxInvoiceType {
+  ABBREVIATED
+  FULL
+}
+
+model NumberSequence {
+  id       Int    @id @default(autoincrement())
+  branchId Int    @map("branch_id")
+  kind     String
+  next     Int    @default(1)
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, kind])
+  @@map("number_sequences")
+}
+
+model Sale {
+  id             Int        @id @default(autoincrement())
+  number         String     @unique
+  branchId       Int        @map("branch_id")
+  customerId     Int?       @map("customer_id")
+  cashierId      Int        @map("cashier_id")
+  status         SaleStatus @default(COMPLETED)
+  subtotal       Int
+  discountAmount Int        @default(0) @map("discount_amount")
+  pointsRedeemed Int        @default(0) @map("points_redeemed")
+  total          Int
+  outstanding    Int        @default(0)
+  taxBase        Int        @map("tax_base")
+  vatAmount      Int        @map("vat_amount")
+  pointsEarned   Int        @default(0) @map("points_earned")
+  voidReason     String?    @map("void_reason")
+  voidedById     Int?       @map("voided_by_id")
+  voidedAt       DateTime?  @map("voided_at")
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  branch            Branch             @relation(fields: [branchId], references: [id])
+  customer          Customer?          @relation(fields: [customerId], references: [id])
+  cashier           User               @relation("SaleCashier", fields: [cashierId], references: [id])
+  voidedBy          User?              @relation("SaleVoidedBy", fields: [voidedById], references: [id])
+  items             SaleItem[]
+  payments          Payment[]
+  taxInvoice        TaxInvoice?
+  stockMovements    StockMovement[]
+  pointTransactions PointTransaction[]
+  fromQuotation     Quotation?
+  delivery          Delivery?
+
+  @@map("sales")
+}
+
+model Quotation {
+  id              Int             @id @default(autoincrement())
+  number          String          @unique
+  branchId        Int             @map("branch_id")
+  customerId      Int?            @map("customer_id")
+  createdById     Int             @map("created_by_id")
+  status          QuotationStatus @default(OPEN)
+  subtotal        Int
+  note            String?
+  convertedSaleId Int?            @unique @map("converted_sale_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  branch        Branch          @relation(fields: [branchId], references: [id])
+  customer      Customer?       @relation(fields: [customerId], references: [id])
+  createdBy     User            @relation(fields: [createdById], references: [id])
+  convertedSale Sale?           @relation(fields: [convertedSaleId], references: [id])
+  items         QuotationItem[]
+
+  @@map("quotations")
+}
+
+model QuotationItem {
+  id          Int    @id @default(autoincrement())
+  quotationId Int    @map("quotation_id")
+  productId   Int    @map("product_id")
+  productName String @map("product_name")
+  unitPrice   Int    @map("unit_price")
+  quantity    Int
+  lineTotal   Int    @map("line_total")
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id])
+
+  @@map("quotation_items")
+}
+
+model SaleItem {
+  id          Int    @id @default(autoincrement())
+  saleId      Int    @map("sale_id")
+  productId   Int    @map("product_id")
+  productName String @map("product_name")
+  unitPrice   Int    @map("unit_price")
+  quantity    Int
+  lineTotal   Int    @map("line_total")
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
+
+model Payment {
+  id     Int           @id @default(autoincrement())
+  saleId Int           @map("sale_id")
+  method PaymentMethod
+  amount Int
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model TaxInvoice {
+  id                 Int            @id @default(autoincrement())
+  saleId             Int            @unique @map("sale_id")
+  type               TaxInvoiceType
+  customerTaxId      String?        @map("customer_tax_id")
+  customerTaxName    String?        @map("customer_tax_name")
+  customerTaxAddress String?        @map("customer_tax_address")
+  createdAt          DateTime       @default(now()) @map("created_at")
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@map("tax_invoices")
+}
+
+model AppSetting {
+  key   String @id
+  value String
+
+  @@map("app_settings")
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique @map("token_hash")
+  userId    Int      @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+enum DeliveryChannelType {
+  IN_HOUSE
+  COURIER
+}
+
+enum DeliveryStatus {
+  PENDING
+  SCHEDULED
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+model DeliveryZone {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  fee       Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  deliveries Delivery[]
+
+  @@map("delivery_zones")
+}
+
+model DeliveryChannel {
+  id        Int                 @id @default(autoincrement())
+  name      String              @unique
+  type      DeliveryChannelType
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  deliveries Delivery[]
+
+  @@map("delivery_channels")
+}
+
+model DeliveryTeam {
+  id        Int      @id @default(autoincrement())
+  name      String
+  branchId  Int      @map("branch_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  branch     Branch     @relation(fields: [branchId], references: [id])
+  drivers    Driver[]
+  deliveries Delivery[]
+
+  @@map("delivery_teams")
+}
+
+model Driver {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  teamId    Int      @map("team_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team       DeliveryTeam @relation(fields: [teamId], references: [id])
+  deliveries Delivery[]
+
+  @@map("drivers")
+}
+
+model Delivery {
+  id             Int            @id @default(autoincrement())
+  saleId         Int            @unique @map("sale_id")
+  zoneId         Int            @map("zone_id")
+  channelId      Int            @map("channel_id")
+  teamId         Int?           @map("team_id")
+  driverId       Int?           @map("driver_id")
+  status         DeliveryStatus @default(PENDING)
+  scheduledDate  DateTime       @map("scheduled_date")
+  timeSlot       String?        @map("time_slot")
+  addressText    String         @map("address_text")
+  recipientName  String?        @map("recipient_name")
+  recipientPhone String?        @map("recipient_phone")
+  fee            Int            @default(0)
+  note           String?
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  sale    Sale            @relation(fields: [saleId], references: [id])
+  zone    DeliveryZone    @relation(fields: [zoneId], references: [id])
+  channel DeliveryChannel @relation(fields: [channelId], references: [id])
+  team    DeliveryTeam?   @relation(fields: [teamId], references: [id])
+  driver  Driver?         @relation(fields: [driverId], references: [id])
+  history DeliveryStatusHistory[]
+
+  @@map("deliveries")
+}
+
+model DeliveryStatusHistory {
+  id          Int            @id @default(autoincrement())
+  deliveryId  Int            @map("delivery_id")
+  status      DeliveryStatus
+  note        String?
+  changedById Int?           @map("changed_by_id")
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  delivery  Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  changedBy User?    @relation(fields: [changedById], references: [id])
+
+  @@map("delivery_status_history")
+}
+
+enum ReportChannel {
+  EMAIL
+  LINE
+}
+
+enum ReportSendStatus {
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model ZReport {
+  id            Int      @id @default(autoincrement())
+  branchId      Int      @map("branch_id")
+  businessDate  DateTime @map("business_date") @db.Date
+  generatedById Int      @map("generated_by_id")
+  salesCount    Int      @map("sales_count")
+  grossTotal    Int      @map("gross_total")
+  vatTotal      Int      @map("vat_total")
+  discountTotal Int      @map("discount_total")
+  cashTotal     Int      @map("cash_total")
+  transferTotal Int      @map("transfer_total")
+  cardTotal     Int      @map("card_total")
+  voidedCount   Int      @map("voided_count")
+  voidedTotal   Int      @map("voided_total")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  branch      Branch @relation(fields: [branchId], references: [id])
+  generatedBy User   @relation(fields: [generatedById], references: [id])
+
+  @@unique([branchId, businessDate])
+  @@map("z_reports")
+}
+
+model DailyReportHistory {
+  id        Int              @id @default(autoincrement())
+  channel   ReportChannel
+  status    ReportSendStatus
+  recipient String?
+  content   String
+  error     String?
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  @@map("daily_report_history")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  method     String
+  path       String
+  statusCode Int      @map("status_code")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_log")
 }
