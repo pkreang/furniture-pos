@@ -185,3 +185,112 @@ describe("sales routes", () => {
     expect(res.json()["company.name"]).toBe("ร้านทดสอบ");
   });
 });
+
+describe("void / settle / outstanding routes", () => {
+  beforeEach(resetAuthTables);
+
+  async function ringSale(
+    f: Fixture,
+    cookies: { fh_session: string },
+    amount: number,
+  ): Promise<number> {
+    const app = buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/sales",
+      cookies,
+      payload: {
+        branchId: f.branchId,
+        items: [{ productId: f.productId, quantity: 1 }],
+        payments: [{ method: "CASH", amount }],
+      },
+    });
+    await app.close();
+    return res.json().id;
+  }
+
+  it("voids a sale with sales.void and rejects a second void", async () => {
+    const f = await fixture();
+    const id = await ringSale(
+      f,
+      await sessionCookie(await createTestUser({ username: "c", permissions: ["sales.create"] })),
+      1000,
+    );
+    const voiderId = await createTestUser({
+      username: "mgr",
+      roleKey: "mgr",
+      permissions: ["sales.void"],
+    });
+    const app = buildApp();
+    const cookies = await sessionCookie(voiderId);
+
+    const first = await app.inject({
+      method: "POST",
+      url: `/api/sales/${id}/void`,
+      cookies,
+      payload: { reason: "คืนของ" },
+    });
+    expect(first.statusCode).toBe(200);
+    expect(first.json().status).toBe("VOIDED");
+
+    const second = await app.inject({ method: "POST", url: `/api/sales/${id}/void`, cookies });
+    await app.close();
+    expect(second.statusCode).toBe(400);
+    expect(second.json().code).toBe("ALREADY_VOIDED");
+  });
+
+  it("rejects voiding without sales.void", async () => {
+    const f = await fixture();
+    const cashier = await sessionCookie(
+      await createTestUser({ username: "c", permissions: ["sales.create"] }),
+    );
+    const id = await ringSale(f, cashier, 1000);
+    const app = buildApp();
+    const res = await app.inject({ method: "POST", url: `/api/sales/${id}/void`, cookies: cashier });
+    await app.close();
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("settles an outstanding balance and rejects overpayment", async () => {
+    const f = await fixture();
+    const cashier = await sessionCookie(
+      await createTestUser({ username: "c", permissions: ["sales.create", "sales.view"] }),
+    );
+    const id = await ringSale(f, cashier, 400); // total 1000, outstanding 600
+    const app = buildApp();
+
+    const settle = await app.inject({
+      method: "POST",
+      url: `/api/sales/${id}/settle`,
+      cookies: cashier,
+      payload: { method: "CASH", amount: 600 },
+    });
+    expect(settle.statusCode).toBe(200);
+    expect(settle.json().outstanding).toBe(0);
+
+    const over = await app.inject({
+      method: "POST",
+      url: `/api/sales/${id}/settle`,
+      cookies: cashier,
+      payload: { method: "CASH", amount: 100 },
+    });
+    await app.close();
+    expect(over.statusCode).toBe(400);
+    expect(over.json().code).toBe("OVERPAYMENT");
+  });
+
+  it("lists only sales with an outstanding balance", async () => {
+    const f = await fixture();
+    const cashier = await sessionCookie(
+      await createTestUser({ username: "c", permissions: ["sales.create", "sales.view"] }),
+    );
+    await ringSale(f, cashier, 1000); // fully paid
+    await ringSale(f, cashier, 300); // outstanding 700
+    const app = buildApp();
+    const res = await app.inject({ method: "GET", url: "/api/sales/outstanding", cookies: cashier });
+    await app.close();
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toHaveLength(1);
+    expect(res.json()[0].outstanding).toBe(700);
+  });
+});

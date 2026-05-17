@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "../prisma.js";
 import { branchFilter } from "../auth/branch-scope.js";
 import { checkout, CheckoutError } from "../sales/checkout.js";
+import { voidSale, VoidError } from "../sales/void.js";
 import { StockError } from "../stock/service.js";
 import { PointError } from "../membership/points.js";
 
@@ -109,6 +110,22 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
   );
 
   app.get(
+    "/api/sales/outstanding",
+    { preHandler: [app.authenticate, app.requirePermission("sales.view")] },
+    async (request) => {
+      return prisma.sale.findMany({
+        where: { status: "COMPLETED", outstanding: { gt: 0 }, ...branchFilter(request.user!) },
+        include: {
+          branch: { select: { name: true, code: true } },
+          customer: { select: { name: true, phone: true } },
+        },
+        orderBy: { id: "desc" },
+        take: 100,
+      });
+    },
+  );
+
+  app.get(
     "/api/sales/:id",
     { preHandler: [app.authenticate, app.requirePermission("sales.view")] },
     async (request, reply) => {
@@ -128,6 +145,75 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
         return reply.code(404).send({ code: "NOT_FOUND", message: "ไม่พบรายการขาย" });
       }
       return sale;
+    },
+  );
+
+  app.post(
+    "/api/sales/:id/void",
+    { preHandler: [app.authenticate, app.requirePermission("sales.void")] },
+    async (request, reply) => {
+      const id = Number((request.params as { id: string }).id);
+      const { reason } = (request.body ?? {}) as { reason?: string };
+      const user = request.user!;
+      const sale = await prisma.sale.findUnique({ where: { id } });
+      if (!sale) {
+        return reply.code(404).send({ code: "NOT_FOUND", message: "ไม่พบรายการขาย" });
+      }
+      if (user.isBranchScoped && sale.branchId !== user.branchId) {
+        return reply.code(403).send({ code: "BRANCH_FORBIDDEN", message: "ยกเลิกได้เฉพาะสาขาของตนเอง" });
+      }
+      try {
+        return await voidSale(id, user.id, reason);
+      } catch (err) {
+        if (err instanceof VoidError) {
+          return reply.code(400).send({ code: err.code, message: err.message });
+        }
+        throw err;
+      }
+    },
+  );
+
+  app.post(
+    "/api/sales/:id/settle",
+    {
+      preHandler: [app.authenticate, app.requirePermission("sales.create")],
+      schema: {
+        body: {
+          type: "object",
+          required: ["method", "amount"],
+          properties: {
+            method: { type: "string", enum: ["CASH", "TRANSFER", "CARD"] },
+            amount: { type: "integer", minimum: 1 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const id = Number((request.params as { id: string }).id);
+      const body = request.body as { method: "CASH" | "TRANSFER" | "CARD"; amount: number };
+      const user = request.user!;
+      const existing = await prisma.sale.findUnique({ where: { id } });
+      if (!existing) {
+        return reply.code(404).send({ code: "NOT_FOUND", message: "ไม่พบรายการขาย" });
+      }
+      if (user.isBranchScoped && existing.branchId !== user.branchId) {
+        return reply.code(403).send({ code: "BRANCH_FORBIDDEN", message: "ทำได้เฉพาะสาขาของตนเอง" });
+      }
+      if (existing.status === "VOIDED") {
+        return reply.code(400).send({ code: "SALE_VOIDED", message: "บิลนี้ถูกยกเลิกแล้ว" });
+      }
+      if (body.amount > existing.outstanding) {
+        return reply.code(400).send({ code: "OVERPAYMENT", message: "ยอดชำระเกินยอดค้าง" });
+      }
+      return prisma.$transaction(async (tx) => {
+        await tx.payment.create({
+          data: { saleId: id, method: body.method, amount: body.amount },
+        });
+        return tx.sale.update({
+          where: { id },
+          data: { outstanding: { decrement: body.amount } },
+        });
+      });
     },
   );
 }
