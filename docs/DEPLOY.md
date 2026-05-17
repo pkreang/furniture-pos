@@ -14,6 +14,7 @@ Prerequisites: Docker + Docker Compose on the VPS.
 Add to crontab — dumps the database every day at 02:00 and keeps 14 days:
 
     0 2 * * * docker compose -f /path/docker-compose.prod.yml exec -T postgres \
-      pg_dump -U furniture furniture_pos | gzip > /backups/pos-$(date +\%F).sql.gz
+      pg_dump -U furniture furniture_pos | gzip > /backups/pos-$(date +\%F).sql.gz \
+      && find /backups -name "pos-*.sql.gz" -mtime +14 -delete
 
 Copy `/backups` off the VPS regularly.

@@ -8,6 +8,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   api:
     build:
@@ -18,7 +23,8 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       API_PORT: 3000
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     command: sh -c "npx prisma migrate deploy && node dist/server.js"
 
   web:
