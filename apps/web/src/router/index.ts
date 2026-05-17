@@ -87,6 +87,30 @@ const routes: RouteRecordRaw[] = [
     component: () => import("../views/TransferView.vue"),
     meta: { permission: "stock.view" },
   },
+  {
+    path: "/customers",
+    name: "customers",
+    component: () => import("../views/CustomerListView.vue"),
+    meta: { permission: "customers.view" },
+  },
+  {
+    path: "/customers/new",
+    name: "customer-new",
+    component: () => import("../views/CustomerFormView.vue"),
+    meta: { permission: "customers.manage" },
+  },
+  {
+    path: "/customers/:id/edit",
+    name: "customer-edit",
+    component: () => import("../views/CustomerFormView.vue"),
+    meta: { permission: "customers.manage" },
+  },
+  {
+    path: "/customers/:id",
+    name: "customer-detail",
+    component: () => import("../views/CustomerDetailView.vue"),
+    meta: { permission: "customers.view" },
+  },
 ];
 
 export const router = createRouter({ history: createWebHistory(), routes });
