@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import helmet from "@fastify/helmet";
+import { registerErrorHandlers } from "./errors.js";
 import authPlugin from "./auth/plugin.js";
 import auditPlugin from "./audit/plugin.js";
 import { authRoutes } from "./auth/routes.js";
@@ -26,6 +27,7 @@ import { settingsRoutes } from "./routes/settings.js";
 export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: false });
 
+  registerErrorHandlers(app);
   app.register(helmet);
 
   app.get("/health", async () => ({ status: "ok" }));
