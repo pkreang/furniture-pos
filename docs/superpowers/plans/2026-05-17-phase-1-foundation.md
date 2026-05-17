@@ -124,8 +124,8 @@ POSTGRES_DB=furniture_pos
 
 # API
 API_PORT=3000
-DATABASE_URL=postgresql://furniture:change_me_in_real_env@localhost:5432/furniture_pos
-DATABASE_URL_TEST=postgresql://furniture:change_me_in_real_env@localhost:5432/furniture_pos_test
+DATABASE_URL=postgresql://furniture:change_me_in_real_env@localhost:5544/furniture_pos
+DATABASE_URL_TEST=postgresql://furniture:change_me_in_real_env@localhost:5544/furniture_pos_test
 ```
 
 - [ ] **Step 6: Create `README.md`**
@@ -171,7 +171,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "5544:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
