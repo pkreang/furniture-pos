@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import authPlugin from "./auth/plugin.js";
+import auditPlugin from "./audit/plugin.js";
 import { authRoutes } from "./auth/routes.js";
 import { branchRoutes } from "./routes/branches.js";
 import { userRoutes } from "./routes/users.js";
@@ -16,6 +17,7 @@ import { deliveryRoutes } from "./routes/deliveries.js";
 import { reportRoutes } from "./routes/reports.js";
 import { dailyReportRoutes } from "./routes/daily-report.js";
 import { eventRoutes } from "./routes/events.js";
+import { auditRoutes } from "./routes/audit.js";
 import { settingsRoutes } from "./routes/settings.js";
 
 export function buildApp(): FastifyInstance {
@@ -24,6 +26,7 @@ export function buildApp(): FastifyInstance {
   app.get("/health", async () => ({ status: "ok" }));
 
   app.register(authPlugin);
+  app.register(auditPlugin);
   app.register(authRoutes);
   app.register(branchRoutes);
   app.register(userRoutes);
@@ -40,6 +43,7 @@ export function buildApp(): FastifyInstance {
   app.register(reportRoutes);
   app.register(dailyReportRoutes);
   app.register(eventRoutes);
+  app.register(auditRoutes);
   app.register(settingsRoutes);
 
   return app;
