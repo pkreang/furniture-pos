@@ -153,6 +153,30 @@ const routes: RouteRecordRaw[] = [
     component: () => import("../views/QuotationDetailView.vue"),
     meta: { permission: "quotations.view" },
   },
+  {
+    path: "/deliveries",
+    name: "deliveries",
+    component: () => import("../views/DeliveryListView.vue"),
+    meta: { permission: "delivery.view" },
+  },
+  {
+    path: "/deliveries/new",
+    name: "delivery-new",
+    component: () => import("../views/DeliveryFormView.vue"),
+    meta: { permission: "delivery.manage" },
+  },
+  {
+    path: "/deliveries/:id",
+    name: "delivery-detail",
+    component: () => import("../views/DeliveryDetailView.vue"),
+    meta: { permission: "delivery.view" },
+  },
+  {
+    path: "/delivery-settings",
+    name: "delivery-settings",
+    component: () => import("../views/DeliverySettingsView.vue"),
+    meta: { permission: "delivery.view" },
+  },
 ];
 
 export const router = createRouter({ history: createWebHistory(), routes });

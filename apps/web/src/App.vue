@@ -23,6 +23,8 @@ async function doLogout(): Promise<void> {
       <RouterLink v-if="auth.hasPermission('sales.view')" to="/sales">{{ t("sales") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('sales.view')" to="/outstanding">{{ t("outstanding") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('quotations.view')" to="/quotations">{{ t("quotations") }}</RouterLink>
+      <RouterLink v-if="auth.hasPermission('delivery.view')" to="/deliveries">{{ t("deliveries") }}</RouterLink>
+      <RouterLink v-if="auth.hasPermission('delivery.view')" to="/delivery-settings">{{ t("deliverySettings") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('branches.view')" to="/branches">{{ t("branches") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('catalog.view')" to="/categories">{{ t("categories") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('catalog.view')" to="/products">{{ t("products") }}</RouterLink>
