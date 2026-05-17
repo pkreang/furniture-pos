@@ -33,6 +33,9 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: "customers.manage", description: "เพิ่ม/แก้ไขลูกค้าและปรับแต้มสะสม" },
   { key: "sales.create", description: "ขายสินค้า (เปิดบิล)" },
   { key: "sales.view", description: "ดูประวัติการขาย" },
+  { key: "sales.void", description: "ยกเลิกบิลและคืนเงิน" },
+  { key: "quotations.view", description: "ดูใบเสนอราคา" },
+  { key: "quotations.manage", description: "สร้างและแปลงใบเสนอราคา" },
 ];
 
 const ALL = PERMISSIONS.map((p) => p.key);
@@ -55,6 +58,9 @@ export const ROLES: RoleDef[] = [
       "customers.manage",
       "sales.create",
       "sales.view",
+      "sales.void",
+      "quotations.view",
+      "quotations.manage",
     ],
   },
   {
@@ -70,6 +76,8 @@ export const ROLES: RoleDef[] = [
       "customers.manage",
       "sales.create",
       "sales.view",
+      "quotations.view",
+      "quotations.manage",
     ],
   },
   {
@@ -77,7 +85,15 @@ export const ROLES: RoleDef[] = [
     name: "บัญชี",
     isBranchScoped: false,
     discountMaxPercent: 0,
-    permissions: ["users.view", "branches.view", "catalog.view", "stock.view", "customers.view", "sales.view"],
+    permissions: [
+      "users.view",
+      "branches.view",
+      "catalog.view",
+      "stock.view",
+      "customers.view",
+      "sales.view",
+      "quotations.view",
+    ],
   },
 ];
 
