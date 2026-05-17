@@ -157,7 +157,7 @@ git commit -m "chore: initialize monorepo, move demo to legacy-demo/"
 ## Task 2: PostgreSQL via Docker Compose
 
 **Files:**
-- Create: `docker-compose.yml`
+- Create: `docker-compose.yml`, `docker/init.sql`
 
 - [ ] **Step 1: Create `docker-compose.yml`**
 
@@ -174,6 +174,7 @@ services:
       - "5544:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
 volumes:
   pgdata:
@@ -184,13 +185,13 @@ volumes:
 Run: `cp .env.example .env && npm run db:up`
 Expected: `docker compose ps` shows the `postgres` service as `running`.
 
-- [ ] **Step 3: Create the test database**
+- [ ] **Step 3: Verify both databases exist**
 
-Run:
-```bash
-docker compose exec postgres psql -U furniture -d furniture_pos -c "CREATE DATABASE furniture_pos_test;"
-```
-Expected: `CREATE DATABASE`
+The `docker/init.sql` script (mounted into the container) creates `furniture_pos_test`
+automatically on first initialization. Verify:
+
+Run: `docker compose exec postgres psql -U furniture -d furniture_pos -c "\l"`
+Expected: both `furniture_pos` and `furniture_pos_test` are listed.
 
 - [ ] **Step 4: Commit**
 
