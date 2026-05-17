@@ -119,4 +119,57 @@ describe("customers routes", () => {
     expect(res.json().tier.key).toBe("bronze");
     expect(Array.isArray(res.json().pointTransactions)).toBe(true);
   });
+
+  it("adjusts a customer's points with customers.manage", async () => {
+    const customer = await prisma.customer.create({ data: { name: "แต้ม", phone: "0840000000" } });
+    const adminId = await createTestUser({ username: "admin", permissions: ["customers.view", "customers.manage"] });
+    const app = buildApp();
+    const cookies = await sessionCookie(adminId);
+
+    const adjust = await app.inject({
+      method: "POST",
+      url: `/api/customers/${customer.id}/points`,
+      cookies,
+      payload: { delta: 150, note: "โปรโมชัน" },
+    });
+    expect(adjust.statusCode).toBe(200);
+    expect(adjust.json().pointsBalance).toBe(150);
+
+    const detail = await app.inject({
+      method: "GET",
+      url: `/api/customers/${customer.id}`,
+      cookies,
+    });
+    await app.close();
+    expect(detail.json().pointTransactions).toHaveLength(1);
+  });
+
+  it("rejects a point adjustment that overdraws the balance", async () => {
+    const customer = await prisma.customer.create({ data: { name: "ติดลบ", phone: "0850000000" } });
+    const adminId = await createTestUser({ username: "admin", permissions: ["customers.manage"] });
+    const app = buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: `/api/customers/${customer.id}/points`,
+      cookies: await sessionCookie(adminId),
+      payload: { delta: -10 },
+    });
+    await app.close();
+    expect(res.statusCode).toBe(400);
+    expect(res.json().code).toBe("INSUFFICIENT_POINTS");
+  });
+
+  it("rejects point adjustment without customers.manage", async () => {
+    const customer = await prisma.customer.create({ data: { name: "ห้าม", phone: "0860000000" } });
+    const viewerId = await createTestUser({ username: "viewer", permissions: ["customers.view"] });
+    const app = buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: `/api/customers/${customer.id}/points`,
+      cookies: await sessionCookie(viewerId),
+      payload: { delta: 10 },
+    });
+    await app.close();
+    expect(res.statusCode).toBe(403);
+  });
 });

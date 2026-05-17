@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { getTier } from "../membership/tiers.js";
+import { applyPointTransaction, PointError } from "../membership/points.js";
 
 function isUniqueViolation(err: unknown): boolean {
   return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
@@ -103,6 +104,47 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
         where: { id },
         data: request.body as Prisma.CustomerUpdateInput,
       });
+    },
+  );
+
+  app.post(
+    "/api/customers/:id/points",
+    {
+      preHandler: [app.authenticate, app.requirePermission("customers.manage")],
+      schema: {
+        body: {
+          type: "object",
+          required: ["delta"],
+          properties: {
+            delta: { type: "integer" },
+            note: { type: "string" },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const id = Number((request.params as { id: string }).id);
+      const body = request.body as { delta: number; note?: string };
+      if (body.delta === 0) {
+        return reply.code(400).send({ code: "INVALID_DELTA", message: "จำนวนแต้มต้องไม่เป็นศูนย์" });
+      }
+      try {
+        const balance = await prisma.$transaction((tx) =>
+          applyPointTransaction(tx, {
+            customerId: id,
+            delta: body.delta,
+            reason: "ADJUST",
+            note: body.note,
+            userId: request.user!.id,
+          }),
+        );
+        return { customerId: id, pointsBalance: balance };
+      } catch (err) {
+        if (err instanceof PointError) {
+          return reply.code(400).send({ code: "INSUFFICIENT_POINTS", message: err.message });
+        }
+        throw err;
+      }
     },
   );
 }
