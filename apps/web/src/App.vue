@@ -19,6 +19,8 @@ async function doLogout(): Promise<void> {
   <header>
     <h1>{{ t("appName") }}</h1>
     <nav v-if="signedIn">
+      <RouterLink v-if="auth.hasPermission('sales.create')" to="/pos">{{ t("pos") }}</RouterLink>
+      <RouterLink v-if="auth.hasPermission('sales.view')" to="/sales">{{ t("sales") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('branches.view')" to="/branches">{{ t("branches") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('catalog.view')" to="/categories">{{ t("categories") }}</RouterLink>
       <RouterLink v-if="auth.hasPermission('catalog.view')" to="/products">{{ t("products") }}</RouterLink>

@@ -111,6 +111,24 @@ const routes: RouteRecordRaw[] = [
     component: () => import("../views/CustomerDetailView.vue"),
     meta: { permission: "customers.view" },
   },
+  {
+    path: "/pos",
+    name: "pos",
+    component: () => import("../views/PosView.vue"),
+    meta: { permission: "sales.create" },
+  },
+  {
+    path: "/sales",
+    name: "sales",
+    component: () => import("../views/SalesListView.vue"),
+    meta: { permission: "sales.view" },
+  },
+  {
+    path: "/sales/:id",
+    name: "receipt",
+    component: () => import("../views/ReceiptView.vue"),
+    meta: { permission: "sales.view" },
+  },
 ];
 
 export const router = createRouter({ history: createWebHistory(), routes });
