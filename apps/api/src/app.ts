@@ -9,6 +9,8 @@ import { productRoutes } from "./routes/products.js";
 import { stockRoutes } from "./routes/stock.js";
 import { transferRoutes } from "./routes/transfers.js";
 import { customerRoutes } from "./routes/customers.js";
+import { saleRoutes } from "./routes/sales.js";
+import { settingsRoutes } from "./routes/settings.js";
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -25,6 +27,8 @@ export function buildApp(): FastifyInstance {
   app.register(stockRoutes);
   app.register(transferRoutes);
   app.register(customerRoutes);
+  app.register(saleRoutes);
+  app.register(settingsRoutes);
 
   return app;
 }
