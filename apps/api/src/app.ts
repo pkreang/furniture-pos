@@ -10,6 +10,7 @@ import { stockRoutes } from "./routes/stock.js";
 import { transferRoutes } from "./routes/transfers.js";
 import { customerRoutes } from "./routes/customers.js";
 import { saleRoutes } from "./routes/sales.js";
+import { quotationRoutes } from "./routes/quotations.js";
 import { settingsRoutes } from "./routes/settings.js";
 
 export function buildApp(): FastifyInstance {
@@ -28,6 +29,7 @@ export function buildApp(): FastifyInstance {
   app.register(transferRoutes);
   app.register(customerRoutes);
   app.register(saleRoutes);
+  app.register(quotationRoutes);
   app.register(settingsRoutes);
 
   return app;
