@@ -7,14 +7,22 @@ Prerequisites: Docker + Docker Compose on the VPS.
    the host is the compose service name: `postgresql://USER:PASS@postgres:5432/DB`.
 3. `docker compose -f docker-compose.prod.yml up -d --build`
 4. The web app is served on port 80. Put a TLS reverse proxy
-   (e.g. Caddy, or nginx with certbot) in front for HTTPS — see Phase 10.
+   (e.g. Caddy, or nginx with certbot) in front for HTTPS.
+
+See `docs/GO-LIVE.md` for the full launch runbook (seeding, data migration,
+the smoke-test checklist, and rollback) and `docs/SECURITY.md` for the
+security review.
 
 ## Daily backup (cron on the VPS)
 
-Add to crontab — dumps the database every day at 02:00 and keeps 14 days:
+Backups use `scripts/backup.sh` — it dumps the database from the running
+`postgres` container, gzips it to `/backups` (override with `BACKUP_DIR`), and
+prunes dumps older than 14 days (`RETENTION_DAYS`).
 
-    0 2 * * * docker compose -f /path/docker-compose.prod.yml exec -T postgres \
-      pg_dump -U furniture furniture_pos | gzip > /backups/pos-$(date +\%F).sql.gz \
-      && find /backups -name "pos-*.sql.gz" -mtime +14 -delete
+Add to the VPS crontab — every day at 02:00:
+
+    0 2 * * * /path/to/furniture-pos/scripts/backup.sh >> /var/log/pos-backup.log 2>&1
+
+Restore a dump with `scripts/restore.sh /backups/pos-YYYY-MM-DD-HHMM.sql.gz`.
 
 Copy `/backups` off the VPS regularly.
