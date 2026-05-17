@@ -32,7 +32,7 @@ describe("runSeed", () => {
       include: { permissions: true },
     });
     expect(cashier.isBranchScoped).toBe(true);
-    expect(cashier.permissions).toHaveLength(11);
+    expect(cashier.permissions).toHaveLength(13);
   });
 
   it("seeds the company app settings idempotently", async () => {
