@@ -149,17 +149,52 @@ describe("checkout", () => {
     ).rejects.toMatchObject({ code: "DISCOUNT_TOO_HIGH" });
   });
 
-  it("rejects a payment total that does not match the sale total", async () => {
+  it("rejects a payment above the sale total and a zero payment", async () => {
     const f = await fixture();
     await expect(
       checkout({
         branchId: f.branchId,
         cashierId: f.cashierId,
         items: [{ productId: f.productA, quantity: 1 }],
-        payments: [{ method: "CASH", amount: 999 }],
+        payments: [{ method: "CASH", amount: 1500 }],
         maxDiscountPercent: null,
       }),
-    ).rejects.toMatchObject({ code: "PAYMENT_MISMATCH" });
+    ).rejects.toMatchObject({ code: "OVERPAYMENT" });
+
+    await expect(
+      checkout({
+        branchId: f.branchId,
+        cashierId: f.cashierId,
+        items: [{ productId: f.productA, quantity: 1 }],
+        payments: [{ method: "CASH", amount: 0 }],
+        maxDiscountPercent: null,
+      }),
+    ).rejects.toMatchObject({ code: "NO_PAYMENT" });
+  });
+
+  it("accepts a partial payment and records the outstanding balance", async () => {
+    const f = await fixture();
+    const sale = await checkout({
+      branchId: f.branchId,
+      cashierId: f.cashierId,
+      items: [{ productId: f.productA, quantity: 1 }],
+      payments: [{ method: "CASH", amount: 400 }],
+      maxDiscountPercent: null,
+    });
+    expect(sale.total).toBe(1000);
+    expect(sale.outstanding).toBe(600);
+  });
+
+  it("leaves a fully paid sale with zero outstanding", async () => {
+    const f = await fixture();
+    const sale = await checkout({
+      branchId: f.branchId,
+      cashierId: f.cashierId,
+      items: [{ productId: f.productA, quantity: 1 }],
+      payments: [{ method: "CASH", amount: 1000 }],
+      maxDiscountPercent: null,
+    });
+    expect(sale.outstanding).toBe(0);
   });
 
   it("rejects selling from a warehouse branch and an empty cart", async () => {

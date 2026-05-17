@@ -114,9 +114,13 @@ export async function checkout(args: CheckoutArgs): Promise<CheckoutResult> {
     if (total < 0) throw new CheckoutError("NEGATIVE_TOTAL", "ยอดสุทธิติดลบ");
 
     const paymentSum = args.payments.reduce((sum, p) => sum + p.amount, 0);
-    if (paymentSum !== total) {
-      throw new CheckoutError("PAYMENT_MISMATCH", "ยอดชำระไม่ตรงกับยอดสุทธิ");
+    if (paymentSum <= 0) {
+      throw new CheckoutError("NO_PAYMENT", "ต้องชำระเงินอย่างน้อยบางส่วน");
     }
+    if (paymentSum > total) {
+      throw new CheckoutError("OVERPAYMENT", "ยอดชำระเกินยอดสุทธิ");
+    }
+    const outstanding = total - paymentSum;
 
     const { taxBase, vatAmount } = extractVat(total);
     const pointsEarned = customer ? calcPointsEarned(total) : 0;
@@ -132,6 +136,7 @@ export async function checkout(args: CheckoutArgs): Promise<CheckoutResult> {
         discountAmount,
         pointsRedeemed: redeemPoints,
         total,
+        outstanding,
         taxBase,
         vatAmount,
         pointsEarned,
