@@ -51,6 +51,42 @@ const routes: RouteRecordRaw[] = [
     component: () => import("../views/RolePermissionsView.vue"),
     meta: { permission: "roles.view" },
   },
+  {
+    path: "/categories",
+    name: "categories",
+    component: () => import("../views/CategoryListView.vue"),
+    meta: { permission: "catalog.view" },
+  },
+  {
+    path: "/products",
+    name: "products",
+    component: () => import("../views/ProductListView.vue"),
+    meta: { permission: "catalog.view" },
+  },
+  {
+    path: "/products/new",
+    name: "product-new",
+    component: () => import("../views/ProductFormView.vue"),
+    meta: { permission: "catalog.manage" },
+  },
+  {
+    path: "/products/:id/edit",
+    name: "product-edit",
+    component: () => import("../views/ProductFormView.vue"),
+    meta: { permission: "catalog.manage" },
+  },
+  {
+    path: "/stock",
+    name: "stock",
+    component: () => import("../views/StockView.vue"),
+    meta: { permission: "stock.view" },
+  },
+  {
+    path: "/transfers",
+    name: "transfers",
+    component: () => import("../views/TransferView.vue"),
+    meta: { permission: "stock.view" },
+  },
 ];
 
 export const router = createRouter({ history: createWebHistory(), routes });
