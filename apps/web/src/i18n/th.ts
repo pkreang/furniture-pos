@@ -1,4 +1,15 @@
 export default {
   appName: "Furniture House POS",
   branches: "สาขา",
+  login: "เข้าสู่ระบบ",
+  logout: "ออกจากระบบ",
+  username: "ชื่อผู้ใช้",
+  password: "รหัสผ่าน",
+  currentPassword: "รหัสผ่านปัจจุบัน",
+  newPassword: "รหัสผ่านใหม่",
+  changePassword: "เปลี่ยนรหัสผ่าน",
+  users: "ผู้ใช้",
+  roles: "บทบาทและสิทธิ์",
+  save: "บันทึก",
+  cancel: "ยกเลิก",
 };

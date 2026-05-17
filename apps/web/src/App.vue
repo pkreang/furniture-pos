@@ -1,11 +1,30 @@
 <script setup lang="ts">
+import { computed } from "vue";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { useAuthStore } from "./stores/auth";
+
 const { t } = useI18n();
+const router = useRouter();
+const auth = useAuthStore();
+const signedIn = computed(() => auth.user !== null);
+
+async function doLogout(): Promise<void> {
+  await auth.logout();
+  router.replace("/login");
+}
 </script>
 
 <template>
   <header>
     <h1>{{ t("appName") }}</h1>
+    <nav v-if="signedIn">
+      <RouterLink v-if="auth.hasPermission('branches.view')" to="/branches">{{ t("branches") }}</RouterLink>
+      <RouterLink v-if="auth.hasPermission('users.view')" to="/users">{{ t("users") }}</RouterLink>
+      <RouterLink v-if="auth.hasPermission('roles.view')" to="/roles">{{ t("roles") }}</RouterLink>
+      <span>{{ auth.user?.name }}</span>
+      <button type="button" @click="doLogout">{{ t("logout") }}</button>
+    </nav>
   </header>
   <main>
     <RouterView />
