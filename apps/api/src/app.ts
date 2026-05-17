@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import authPlugin from "./auth/plugin.js";
 import { authRoutes } from "./auth/routes.js";
 import { branchRoutes } from "./routes/branches.js";
+import { userRoutes } from "./routes/users.js";
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -11,6 +12,7 @@ export function buildApp(): FastifyInstance {
   app.register(authPlugin);
   app.register(authRoutes);
   app.register(branchRoutes);
+  app.register(userRoutes);
 
   return app;
 }
