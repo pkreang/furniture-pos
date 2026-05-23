@@ -43,7 +43,7 @@ onMounted(async () => {
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("zReport") }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("zReport") }}</h1>
 
     <div v-if="canGenerate" class="card mb-4">
       <form class="flex flex-wrap items-end gap-3" @submit.prevent="generate">

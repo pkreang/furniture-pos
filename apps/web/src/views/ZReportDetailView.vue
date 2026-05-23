@@ -27,17 +27,17 @@ onMounted(async () => {
   <div class="p-6 max-w-screen-xl mx-auto">
     <p v-if="error" class="text-red-600 mb-4">{{ error }}</p>
     <template v-if="z">
-      <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("zReport") }} — {{ z.branch?.name }} {{ z.businessDate.slice(0, 10) }}</h1>
+      <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("zReport") }} — {{ z.branch?.name }} {{ z.businessDate.slice(0, 10) }}</h1>
       <div class="card mb-4">
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-          <div><dt class="text-slate-500">{{ t("sales") }}</dt><dd class="text-slate-900 font-medium">{{ z.salesCount }} บิล</dd></div>
-          <div><dt class="text-slate-500">{{ t("total") }}</dt><dd class="text-slate-900 font-medium">{{ money(z.grossTotal) }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("vat") }}</dt><dd class="text-slate-900 font-medium">{{ money(z.vatTotal) }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("discount") }}</dt><dd class="text-slate-900 font-medium">{{ money(z.discountTotal) }}</dd></div>
-          <div><dt class="text-slate-500">เงินสด</dt><dd class="text-slate-900 font-medium">{{ money(z.cashTotal) }}</dd></div>
-          <div><dt class="text-slate-500">โอนเงิน</dt><dd class="text-slate-900 font-medium">{{ money(z.transferTotal) }}</dd></div>
-          <div><dt class="text-slate-500">บัตร</dt><dd class="text-slate-900 font-medium">{{ money(z.cardTotal) }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("voided") }}</dt><dd class="text-slate-900 font-medium">{{ z.voidedCount }} บิล / {{ money(z.voidedTotal) }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("sales") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ z.salesCount }} บิล</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("total") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ money(z.grossTotal) }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("vat") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ money(z.vatTotal) }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("discount") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ money(z.discountTotal) }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">เงินสด</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ money(z.cashTotal) }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">โอนเงิน</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ money(z.transferTotal) }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">บัตร</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ money(z.cardTotal) }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("voided") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ z.voidedCount }} บิล / {{ money(z.voidedTotal) }}</dd></div>
         </dl>
       </div>
       <RouterLink to="/z-reports" class="btn-secondary">{{ t("cancel") }}</RouterLink>

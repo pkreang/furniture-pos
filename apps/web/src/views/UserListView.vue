@@ -28,10 +28,10 @@ onMounted(load);
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
     <header class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold text-slate-900">{{ t("users") }}</h1>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ t("users") }}</h1>
       <RouterLink v-if="auth.hasPermission('users.manage')" to="/users/new" class="btn-primary">+ {{ t("users") }}</RouterLink>
     </header>
-    <p v-if="loading" class="text-slate-500">…</p>
+    <p v-if="loading" class="text-slate-500 dark:text-slate-400">…</p>
     <p v-else-if="error" class="text-red-600">{{ error }}</p>
     <div v-else class="card overflow-x-auto">
       <table class="data-table">
@@ -40,8 +40,8 @@ onMounted(load);
         </thead>
         <tbody>
           <tr v-for="u in users" :key="u.id">
-            <td class="font-mono text-xs text-slate-600">{{ u.username }}</td>
-            <td>{{ u.name }}<span v-if="!u.isActive" class="text-slate-500"> (ปิดใช้งาน)</span></td>
+            <td class="font-mono text-xs text-slate-600 dark:text-slate-300">{{ u.username }}</td>
+            <td>{{ u.name }}<span v-if="!u.isActive" class="text-slate-500 dark:text-slate-400"> (ปิดใช้งาน)</span></td>
             <td>
               <RouterLink
                 v-if="auth.hasPermission('users.manage')"

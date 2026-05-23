@@ -18,13 +18,13 @@ onMounted(async () => {
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("roles") }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("roles") }}</h1>
     <p v-if="error" class="text-red-600">{{ error }}</p>
     <div v-else class="card">
       <ul class="divide-y divide-slate-200">
         <li v-for="r in roles" :key="r.id" class="py-3 flex items-center justify-between">
           <RouterLink :to="`/roles/${r.id}`" class="text-indigo-600 hover:text-indigo-700 font-medium">{{ r.name }}</RouterLink>
-          <span class="text-sm text-slate-500">{{ r.permissionKeys.length }} สิทธิ์</span>
+          <span class="text-sm text-slate-500 dark:text-slate-400">{{ r.permissionKeys.length }} สิทธิ์</span>
         </li>
       </ul>
     </div>

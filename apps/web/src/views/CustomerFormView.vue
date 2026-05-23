@@ -64,7 +64,7 @@ async function submit(): Promise<void> {
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("customer") }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("customer") }}</h1>
     <div class="card max-w-2xl">
       <form @submit.prevent="submit">
         <div class="form-row">
@@ -73,14 +73,14 @@ async function submit(): Promise<void> {
         </div>
         <div class="form-row">
           <label>{{ t("phone") }}</label>
-          <input v-model="form.phone" :disabled="editingId !== null" class="input disabled:bg-slate-100" />
+          <input v-model="form.phone" :disabled="editingId !== null" class="input disabled:bg-slate-100 dark:bg-slate-800" />
         </div>
         <div class="form-row">
           <label>{{ t("email") }}</label>
           <input v-model="form.email" type="email" class="input" />
         </div>
-        <fieldset class="border border-slate-200 rounded-md p-4 mb-4">
-          <legend class="text-sm font-semibold text-slate-700 px-2">{{ t("taxId") }}</legend>
+        <fieldset class="border border-slate-200 dark:border-slate-700 rounded-md p-4 mb-4">
+          <legend class="text-sm font-semibold text-slate-700 dark:text-slate-300 px-2">{{ t("taxId") }}</legend>
           <div class="form-row">
             <label>{{ t("taxId") }}</label>
             <input v-model="form.taxId" class="input" />

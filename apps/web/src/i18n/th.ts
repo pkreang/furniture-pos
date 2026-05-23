@@ -3,6 +3,7 @@ export default {
   branches: "สาขา",
   login: "เข้าสู่ระบบ",
   logout: "ออกจากระบบ",
+  toggleDarkMode: "สลับธีมมืด/สว่าง",
   username: "ชื่อผู้ใช้",
   password: "รหัสผ่าน",
   currentPassword: "รหัสผ่านปัจจุบัน",

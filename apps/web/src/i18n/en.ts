@@ -3,6 +3,7 @@ export default {
   branches: "Branches",
   login: "Log in",
   logout: "Log out",
+  toggleDarkMode: "Toggle dark mode",
   username: "Username",
   password: "Password",
   currentPassword: "Current password",

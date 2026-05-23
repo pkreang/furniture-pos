@@ -41,7 +41,7 @@ onMounted(load);
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("categories") }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("categories") }}</h1>
     <div v-if="auth.hasPermission('catalog.manage')" class="card mb-4">
       <form class="flex flex-wrap items-end gap-3" @submit.prevent="add">
         <div class="form-row flex-1 mb-0 min-w-[200px]">
@@ -51,11 +51,11 @@ onMounted(load);
         <button type="submit" class="btn-primary">{{ t("add") }}</button>
       </form>
     </div>
-    <p v-if="loading" class="text-slate-500">…</p>
+    <p v-if="loading" class="text-slate-500 dark:text-slate-400">…</p>
     <p v-else-if="error" class="text-red-600">{{ error }}</p>
     <div v-else class="card">
       <ul class="divide-y divide-slate-200">
-        <li v-for="c in categories" :key="c.id" class="py-3 text-slate-800">{{ c.name }}</li>
+        <li v-for="c in categories" :key="c.id" class="py-3 text-slate-800 dark:text-slate-200">{{ c.name }}</li>
       </ul>
     </div>
   </div>

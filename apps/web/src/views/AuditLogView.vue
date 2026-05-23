@@ -22,8 +22,8 @@ onMounted(async () => {
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("auditLog") }}</h1>
-    <p v-if="loading" class="text-slate-500">…</p>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("auditLog") }}</h1>
+    <p v-if="loading" class="text-slate-500 dark:text-slate-400">…</p>
     <p v-else-if="error" class="text-red-600">{{ error }}</p>
     <div v-else class="card overflow-x-auto">
       <table class="data-table">

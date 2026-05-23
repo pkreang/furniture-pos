@@ -44,18 +44,18 @@ async function save(): Promise<void> {
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("roles") }} — {{ roleName }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("roles") }} — {{ roleName }}</h1>
     <div class="card mb-4">
       <ul class="space-y-2">
         <li v-for="p in permissions" :key="p.key">
-          <label class="flex items-center gap-2 text-sm text-slate-700 font-normal">
+          <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-normal">
             <input
               type="checkbox"
               :checked="selected.has(p.key)"
               :disabled="!auth.hasPermission('roles.manage')"
               @change="toggle(p.key)"
             />
-            {{ p.description }} <code class="text-xs bg-slate-100 px-1 py-0.5 rounded text-slate-600">({{ p.key }})</code>
+            {{ p.description }} <code class="text-xs bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-slate-600 dark:text-slate-300">({{ p.key }})</code>
           </label>
         </li>
       </ul>

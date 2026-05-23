@@ -38,7 +38,7 @@ async function submit(): Promise<void> {
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("branches") }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("branches") }}</h1>
     <div class="card max-w-lg">
       <form @submit.prevent="submit">
         <div class="form-row">

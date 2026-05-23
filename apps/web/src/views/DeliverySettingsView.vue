@@ -61,15 +61,15 @@ onMounted(load);
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("deliverySettings") }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("deliverySettings") }}</h1>
     <p v-if="error" class="text-red-600 mb-4">{{ error }}</p>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="card">
-        <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("zone") }}</h2>
+        <h2 class="text-lg font-semibold mb-3 text-slate-800 dark:text-slate-200">{{ t("zone") }}</h2>
         <ul class="divide-y divide-slate-200 mb-4">
-          <li v-for="z in zones" :key="z.id" class="py-2 text-sm text-slate-700">
-            {{ z.name }} — <span class="text-slate-500">{{ t("fee") }} {{ z.fee }}</span>
+          <li v-for="z in zones" :key="z.id" class="py-2 text-sm text-slate-700 dark:text-slate-300">
+            {{ z.name }} — <span class="text-slate-500 dark:text-slate-400">{{ t("fee") }} {{ z.fee }}</span>
           </li>
         </ul>
         <form v-if="canManage" class="flex flex-wrap items-end gap-2" @submit.prevent="run(() => createZone(zoneForm.name, zoneForm.fee))">
@@ -80,9 +80,9 @@ onMounted(load);
       </div>
 
       <div class="card">
-        <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("channel") }}</h2>
+        <h2 class="text-lg font-semibold mb-3 text-slate-800 dark:text-slate-200">{{ t("channel") }}</h2>
         <ul class="divide-y divide-slate-200 mb-4">
-          <li v-for="c in channels" :key="c.id" class="py-2 text-sm text-slate-700">{{ c.name }} <span class="text-slate-500">({{ c.type }})</span></li>
+          <li v-for="c in channels" :key="c.id" class="py-2 text-sm text-slate-700 dark:text-slate-300">{{ c.name }} <span class="text-slate-500 dark:text-slate-400">({{ c.type }})</span></li>
         </ul>
         <form v-if="canManage" class="flex flex-wrap items-end gap-2" @submit.prevent="run(() => createChannel(channelForm.name, channelForm.type))">
           <input v-model="channelForm.name" :placeholder="t('channel')" class="input flex-1 min-w-[140px]" />
@@ -95,9 +95,9 @@ onMounted(load);
       </div>
 
       <div class="card">
-        <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("team") }}</h2>
+        <h2 class="text-lg font-semibold mb-3 text-slate-800 dark:text-slate-200">{{ t("team") }}</h2>
         <ul class="divide-y divide-slate-200 mb-4">
-          <li v-for="tm in teams" :key="tm.id" class="py-2 text-sm text-slate-700">{{ tm.name }}</li>
+          <li v-for="tm in teams" :key="tm.id" class="py-2 text-sm text-slate-700 dark:text-slate-300">{{ tm.name }}</li>
         </ul>
         <form v-if="canManage" class="flex flex-wrap items-end gap-2" @submit.prevent="run(() => createTeam(teamForm.name, teamForm.branchId))">
           <input v-model="teamForm.name" :placeholder="t('team')" class="input flex-1 min-w-[140px]" />
@@ -109,10 +109,10 @@ onMounted(load);
       </div>
 
       <div class="card">
-        <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("driver") }}</h2>
+        <h2 class="text-lg font-semibold mb-3 text-slate-800 dark:text-slate-200">{{ t("driver") }}</h2>
         <ul class="divide-y divide-slate-200 mb-4">
-          <li v-for="d in drivers" :key="d.id" class="py-2 text-sm text-slate-700">
-            {{ d.name }}<span v-if="!d.isActive" class="text-slate-500"> (ปิดใช้งาน)</span>
+          <li v-for="d in drivers" :key="d.id" class="py-2 text-sm text-slate-700 dark:text-slate-300">
+            {{ d.name }}<span v-if="!d.isActive" class="text-slate-500 dark:text-slate-400"> (ปิดใช้งาน)</span>
           </li>
         </ul>
         <form

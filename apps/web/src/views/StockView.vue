@@ -60,10 +60,10 @@ onMounted(async () => {
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("stock") }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("stock") }}</h1>
 
     <div v-if="canAdjust" class="card mb-4">
-      <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("adjust") }}</h2>
+      <h2 class="text-lg font-semibold mb-3 text-slate-800 dark:text-slate-200">{{ t("adjust") }}</h2>
       <form @submit.prevent="submitAdjust">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="form-row">
@@ -92,7 +92,7 @@ onMounted(async () => {
     </div>
 
     <p v-if="error" class="text-red-600 mb-3">{{ error }}</p>
-    <p v-if="loading" class="text-slate-500">…</p>
+    <p v-if="loading" class="text-slate-500 dark:text-slate-400">…</p>
     <div v-else class="card overflow-x-auto">
       <table class="data-table">
         <thead>
@@ -105,7 +105,7 @@ onMounted(async () => {
         </thead>
         <tbody>
           <tr v-for="l in levels" :key="`${l.productId}-${l.branchId}`">
-            <td class="font-mono text-xs text-slate-600">{{ l.product.sku }}</td>
+            <td class="font-mono text-xs text-slate-600 dark:text-slate-300">{{ l.product.sku }}</td>
             <td>{{ l.product.name }}</td>
             <td>{{ l.branch.name }}</td>
             <td>{{ l.quantity }}</td>

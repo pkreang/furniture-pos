@@ -26,12 +26,12 @@ onMounted(async () => {
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
     <header class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold text-slate-900">{{ t("products") }}</h1>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ t("products") }}</h1>
       <RouterLink v-if="auth.hasPermission('catalog.manage')" to="/products/new" class="btn-primary">
         + {{ t("products") }}
       </RouterLink>
     </header>
-    <p v-if="loading" class="text-slate-500">…</p>
+    <p v-if="loading" class="text-slate-500 dark:text-slate-400">…</p>
     <p v-else-if="error" class="text-red-600">{{ error }}</p>
     <div v-else class="card overflow-x-auto">
       <table class="data-table">
@@ -46,7 +46,7 @@ onMounted(async () => {
         </thead>
         <tbody>
           <tr v-for="p in products" :key="p.id">
-            <td class="font-mono text-xs text-slate-600">{{ p.sku }}</td>
+            <td class="font-mono text-xs text-slate-600 dark:text-slate-300">{{ p.sku }}</td>
             <td>{{ p.name }}<span v-if="p.isSofa"> 🛋</span></td>
             <td>{{ p.category?.name }}</td>
             <td>{{ p.basePrice.toLocaleString() }}</td>

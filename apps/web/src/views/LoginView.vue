@@ -30,7 +30,7 @@ async function submit(): Promise<void> {
 <template>
   <div class="min-h-screen flex items-center justify-center p-6">
     <div class="card w-full max-w-sm">
-      <h1 class="text-2xl font-bold mb-6 text-slate-900 text-center">{{ t("login") }}</h1>
+      <h1 class="text-2xl font-bold mb-6 text-slate-900 dark:text-slate-100 text-center">{{ t("login") }}</h1>
       <form @submit.prevent="submit">
         <div class="form-row">
           <label>{{ t("username") }}</label>

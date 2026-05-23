@@ -79,8 +79,8 @@ onMounted(async () => {
       <p v-if="sale.status === 'VOIDED'" class="text-red-600 font-bold mb-3">
         ** {{ t("voided") }} ** {{ sale.voidReason }}
       </p>
-      <header class="text-center mb-3 pb-3 border-b border-slate-200">
-        <h2 class="text-lg font-bold text-slate-900">{{ settings["company.name"] }}</h2>
+      <header class="text-center mb-3 pb-3 border-b border-slate-200 dark:border-slate-700">
+        <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ settings["company.name"] }}</h2>
         <p>{{ settings["company.address"] }}</p>
         <p>{{ t("taxId") }}: {{ settings["company.taxId"] }} · {{ settings["company.phone"] }}</p>
       </header>
@@ -92,7 +92,7 @@ onMounted(async () => {
       <p>{{ new Date(sale.createdAt).toLocaleString() }} · {{ sale.cashier?.name }}</p>
 
       <p v-if="sale.customer">{{ t("customer") }}: {{ sale.customer.name }}</p>
-      <div v-if="sale.taxInvoice?.type === 'FULL'" class="mt-2 pt-2 border-t border-slate-200">
+      <div v-if="sale.taxInvoice?.type === 'FULL'" class="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
         <p>{{ t("taxName") }}: {{ sale.taxInvoice.customerTaxName }}</p>
         <p>{{ t("taxId") }}: {{ sale.taxInvoice.customerTaxId }}</p>
         <p>{{ t("taxAddress") }}: {{ sale.taxInvoice.customerTaxAddress }}</p>
