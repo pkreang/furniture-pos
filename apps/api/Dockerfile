@@ -11,4 +11,4 @@ WORKDIR /repo/apps/api
 COPY --from=build /repo/node_modules /repo/node_modules
 COPY --from=build /repo/apps/api/dist ./dist
 COPY --from=build /repo/apps/api/prisma ./prisma
-CMD ["node", "dist/server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/seed/index.js && node dist/server.js"]
