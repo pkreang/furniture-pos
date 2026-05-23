@@ -13,6 +13,7 @@ import { stockRoutes } from "./routes/stock.js";
 import { transferRoutes } from "./routes/transfers.js";
 import { customerRoutes } from "./routes/customers.js";
 import { supplierRoutes } from "./routes/suppliers.js";
+import { purchaseOrderRoutes } from "./routes/purchase-orders.js";
 import { saleRoutes } from "./routes/sales.js";
 import { quotationRoutes } from "./routes/quotations.js";
 import { deliveryConfigRoutes } from "./routes/delivery-config.js";
@@ -45,6 +46,7 @@ export function buildApp(): FastifyInstance {
   app.register(transferRoutes);
   app.register(customerRoutes);
   app.register(supplierRoutes);
+  app.register(purchaseOrderRoutes);
   app.register(saleRoutes);
   app.register(quotationRoutes);
   app.register(deliveryConfigRoutes);

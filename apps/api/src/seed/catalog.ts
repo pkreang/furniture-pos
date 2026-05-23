@@ -33,6 +33,9 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: "customers.manage", description: "เพิ่ม/แก้ไขลูกค้าและปรับแต้มสะสม" },
   { key: "suppliers.view", description: "ดูข้อมูลซัพพลายเออร์" },
   { key: "suppliers.manage", description: "เพิ่ม/แก้ไขซัพพลายเออร์" },
+  { key: "po.view", description: "ดูใบสั่งซื้อ" },
+  { key: "po.manage", description: "สร้าง/แก้ไขใบสั่งซื้อ" },
+  { key: "po.receive", description: "รับของเข้าตามใบสั่งซื้อ" },
   { key: "sales.create", description: "ขายสินค้า (เปิดบิล)" },
   { key: "sales.view", description: "ดูประวัติการขาย" },
   { key: "sales.void", description: "ยกเลิกบิลและคืนเงิน" },
@@ -75,6 +78,8 @@ export const ROLES: RoleDef[] = [
       "delivery.manage",
       "reports.view",
       "reports.generate",
+      "po.view",
+      "po.receive",
     ],
   },
   {
@@ -114,6 +119,7 @@ export const ROLES: RoleDef[] = [
       "quotations.view",
       "delivery.view",
       "reports.view",
+      "po.view",
     ],
   },
 ];

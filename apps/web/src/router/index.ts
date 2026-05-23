@@ -130,6 +130,30 @@ const routes: RouteRecordRaw[] = [
     meta: { permission: "suppliers.manage" },
   },
   {
+    path: "/purchase-orders",
+    name: "purchase-orders",
+    component: () => import("../views/PoListView.vue"),
+    meta: { permission: "po.view" },
+  },
+  {
+    path: "/purchase-orders/new",
+    name: "purchase-order-new",
+    component: () => import("../views/PoFormView.vue"),
+    meta: { permission: "po.manage" },
+  },
+  {
+    path: "/purchase-orders/:id",
+    name: "purchase-order-detail",
+    component: () => import("../views/PoDetailView.vue"),
+    meta: { permission: "po.view" },
+  },
+  {
+    path: "/purchase-orders/:id/edit",
+    name: "purchase-order-edit",
+    component: () => import("../views/PoFormView.vue"),
+    meta: { permission: "po.manage" },
+  },
+  {
     path: "/pos",
     name: "pos",
     component: () => import("../views/PosView.vue"),

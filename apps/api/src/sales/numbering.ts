@@ -31,3 +31,23 @@ export function formatSaleNumber(branchCode: string, n: number): string {
 export function formatQuotationNumber(branchCode: string, n: number): string {
   return `${branchCode}-Q${String(n).padStart(6, "0")}`;
 }
+
+/**
+ * Allocates the next purchase-order code for the current year, inside a
+ * transaction. PO codes are company-wide (not per-branch), and the year
+ * resets the sequence — `PO-YYYY-NNNN` with zero-padded 4-digit counter.
+ */
+export async function nextPoCode(tx: Prisma.TransactionClient): Promise<string> {
+  const year = new Date().getFullYear();
+  await tx.poSequence.upsert({
+    where: { year },
+    update: {},
+    create: { year, next: 1 },
+  });
+  const updated = await tx.poSequence.update({
+    where: { year },
+    data: { next: { increment: 1 } },
+  });
+  const seq = updated.next - 1;
+  return `PO-${year}-${String(seq).padStart(4, "0")}`;
+}

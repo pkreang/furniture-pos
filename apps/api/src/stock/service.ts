@@ -13,6 +13,7 @@ interface MovementArgs {
   userId?: number;
   transferId?: number;
   saleId?: number;
+  purchaseOrderId?: number;
 }
 
 /**
@@ -56,6 +57,7 @@ export async function applyStockMovement(
       userId: args.userId,
       transferId: args.transferId,
       saleId: args.saleId,
+      purchaseOrderId: args.purchaseOrderId,
     },
   });
 
