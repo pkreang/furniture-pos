@@ -1,6 +1,6 @@
-# Furniture House POS
+# Elite POS
 
-Production rebuild of the multi-branch furniture POS.
+Production rebuild of the multi-branch furniture POS (formerly "Furniture House POS").
 See `docs/superpowers/specs/` for the design and `docs/superpowers/plans/` for plans.
 The original demo is preserved in `legacy-demo/` for reference only.
 

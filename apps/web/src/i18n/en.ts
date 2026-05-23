@@ -1,5 +1,5 @@
 export default {
-  appName: "Furniture House POS",
+  appName: "Elite POS",
   branches: "Branches",
   login: "Log in",
   logout: "Log out",

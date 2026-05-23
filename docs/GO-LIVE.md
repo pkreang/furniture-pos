@@ -1,6 +1,6 @@
 # Go-live Runbook
 
-The launch procedure for the Furniture House POS. See `docs/DEPLOY.md` for the
+The launch procedure for Elite POS. See `docs/DEPLOY.md` for the
 deploy mechanics and `docs/SECURITY.md` for the security review.
 
 ## 1. Pre-launch checklist
