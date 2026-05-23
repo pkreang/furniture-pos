@@ -45,29 +45,29 @@ onMounted(load);
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <p v-if="loading" class="text-slate-500">…</p>
+    <p v-if="loading" class="text-slate-500 dark:text-slate-400">…</p>
     <p v-else-if="error" class="text-red-600">{{ error }}</p>
     <template v-else-if="customer">
       <header class="flex items-center justify-between mb-4">
-        <h1 class="text-2xl font-bold text-slate-900">{{ customer.name }}</h1>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ customer.name }}</h1>
         <RouterLink v-if="canManage" :to="`/customers/${customer.id}/edit`" class="btn-secondary">
           {{ t("save") }}
         </RouterLink>
       </header>
       <div class="card mb-4">
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-          <div><dt class="text-slate-500">{{ t("phone") }}</dt><dd class="text-slate-900 font-medium">{{ customer.phone }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("email") }}</dt><dd class="text-slate-900 font-medium">{{ customer.email || "—" }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("tier") }}</dt><dd class="text-slate-900 font-medium">{{ customer.tier.name }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("points") }}</dt><dd class="text-slate-900 font-medium">{{ customer.pointsBalance }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("taxId") }}</dt><dd class="text-slate-900 font-medium">{{ customer.taxId || "—" }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("taxName") }}</dt><dd class="text-slate-900 font-medium">{{ customer.taxName || "—" }}</dd></div>
-          <div class="sm:col-span-2"><dt class="text-slate-500">{{ t("taxAddress") }}</dt><dd class="text-slate-900 font-medium">{{ customer.taxAddress || "—" }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("phone") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ customer.phone }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("email") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ customer.email || "—" }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("tier") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ customer.tier.name }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("points") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ customer.pointsBalance }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("taxId") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ customer.taxId || "—" }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("taxName") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ customer.taxName || "—" }}</dd></div>
+          <div class="sm:col-span-2"><dt class="text-slate-500 dark:text-slate-400">{{ t("taxAddress") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ customer.taxAddress || "—" }}</dd></div>
         </dl>
       </div>
 
       <div v-if="canManage" class="card mb-4">
-        <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("points") }} (+/-)</h2>
+        <h2 class="text-lg font-semibold mb-3 text-slate-800 dark:text-slate-200">{{ t("points") }} (+/-)</h2>
         <form @submit.prevent="submitAdjust">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="form-row">
@@ -83,7 +83,7 @@ onMounted(load);
         </form>
       </div>
 
-      <h2 class="text-lg font-semibold mt-6 mb-3 text-slate-800">{{ t("points") }}</h2>
+      <h2 class="text-lg font-semibold mt-6 mb-3 text-slate-800 dark:text-slate-200">{{ t("points") }}</h2>
       <div class="card overflow-x-auto mb-4">
         <table class="data-table">
           <thead>

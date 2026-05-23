@@ -32,7 +32,7 @@ function badgeClass(status: DeliveryStatus): string {
   if (status === "DELIVERED") return "badge-success";
   if (status === "IN_TRANSIT" || status === "SCHEDULED") return "badge-warning";
   if (status === "FAILED" || status === "CANCELLED") return "badge-danger";
-  return "badge bg-slate-100 text-slate-700";
+  return "badge bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300";
 }
 
 watch(statusFilter, load);
@@ -42,7 +42,7 @@ onMounted(load);
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
     <header class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold text-slate-900">{{ t("deliveries") }}</h1>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ t("deliveries") }}</h1>
       <RouterLink v-if="auth.hasPermission('delivery.manage')" to="/deliveries/new" class="btn-primary">
         + {{ t("book") }}
       </RouterLink>
@@ -61,7 +61,7 @@ onMounted(load);
         </select>
       </div>
     </div>
-    <p v-if="loading" class="text-slate-500">…</p>
+    <p v-if="loading" class="text-slate-500 dark:text-slate-400">…</p>
     <p v-else-if="error" class="text-red-600">{{ error }}</p>
     <div v-else class="card overflow-x-auto">
       <table class="data-table">

@@ -63,11 +63,11 @@ onMounted(async () => {
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("quotation") }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("quotation") }}</h1>
     <div class="card mb-4 max-w-xs">
       <div class="form-row mb-0">
         <label>{{ t("branches") }}</label>
-        <select v-model.number="branchId" :disabled="auth.user?.isBranchScoped" class="input disabled:bg-slate-100">
+        <select v-model.number="branchId" :disabled="auth.user?.isBranchScoped" class="input disabled:bg-slate-100 dark:bg-slate-800">
           <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
         </select>
       </div>
@@ -99,7 +99,7 @@ onMounted(async () => {
         </tbody>
       </table>
     </div>
-    <p class="mb-3 text-slate-800 font-semibold">{{ t("subtotal") }}: {{ subtotal.toLocaleString() }}</p>
+    <p class="mb-3 text-slate-800 dark:text-slate-200 font-semibold">{{ t("subtotal") }}: {{ subtotal.toLocaleString() }}</p>
     <p v-if="error" class="text-red-600 text-sm mb-3">{{ error }}</p>
     <div class="flex items-center gap-3">
       <button type="button" :disabled="busy" class="btn-primary" @click="submit">{{ t("save") }}</button>

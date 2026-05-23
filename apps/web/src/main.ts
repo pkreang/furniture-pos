@@ -4,5 +4,10 @@ import { createPinia } from "pinia";
 import App from "./App.vue";
 import { router } from "./router";
 import { i18n } from "./i18n";
+import { useThemeStore } from "./stores/theme";
 
-createApp(App).use(createPinia()).use(router).use(i18n).mount("#app");
+const app = createApp(App);
+const pinia = createPinia();
+app.use(pinia).use(router).use(i18n);
+useThemeStore().init();
+app.mount("#app");

@@ -60,12 +60,12 @@ async function submit(): Promise<void> {
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("products") }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("products") }}</h1>
     <div class="card max-w-2xl">
       <form @submit.prevent="submit">
         <div class="form-row">
           <label>{{ t("sku") }}</label>
-          <input v-model="form.sku" :disabled="editingId !== null" class="input disabled:bg-slate-100" />
+          <input v-model="form.sku" :disabled="editingId !== null" class="input disabled:bg-slate-100 dark:bg-slate-800" />
         </div>
         <div class="form-row">
           <label>{{ t("products") }}</label>

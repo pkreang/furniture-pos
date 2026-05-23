@@ -59,18 +59,18 @@ onMounted(async () => {
   <div class="p-6 max-w-screen-xl mx-auto">
     <p v-if="error" class="text-red-600 mb-4">{{ error }}</p>
     <template v-if="delivery">
-      <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("delivery") }} — {{ delivery.sale?.number }}</h1>
+      <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("delivery") }} — {{ delivery.sale?.number }}</h1>
       <div class="card mb-4">
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-          <div><dt class="text-slate-500">{{ t("status") }}</dt><dd class="text-slate-900 font-medium">{{ delivery.status }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("zone") }}</dt><dd class="text-slate-900 font-medium">{{ delivery.zone?.name }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("channel") }}</dt><dd class="text-slate-900 font-medium">{{ delivery.channel?.name }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("team") }}</dt><dd class="text-slate-900 font-medium">{{ delivery.team?.name ?? "—" }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("driver") }}</dt><dd class="text-slate-900 font-medium">{{ delivery.driver?.name ?? "—" }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("scheduledDate") }}</dt><dd class="text-slate-900 font-medium">{{ new Date(delivery.scheduledDate).toLocaleDateString() }}</dd></div>
-          <div class="sm:col-span-2"><dt class="text-slate-500">{{ t("address") }}</dt><dd class="text-slate-900 font-medium">{{ delivery.addressText }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("recipient") }}</dt><dd class="text-slate-900 font-medium">{{ delivery.recipientName ?? "—" }}</dd></div>
-          <div><dt class="text-slate-500">{{ t("fee") }}</dt><dd class="text-slate-900 font-medium">{{ delivery.fee.toLocaleString() }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("status") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ delivery.status }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("zone") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ delivery.zone?.name }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("channel") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ delivery.channel?.name }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("team") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ delivery.team?.name ?? "—" }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("driver") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ delivery.driver?.name ?? "—" }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("scheduledDate") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ new Date(delivery.scheduledDate).toLocaleDateString() }}</dd></div>
+          <div class="sm:col-span-2"><dt class="text-slate-500 dark:text-slate-400">{{ t("address") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ delivery.addressText }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("recipient") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ delivery.recipientName ?? "—" }}</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{{ t("fee") }}</dt><dd class="text-slate-900 dark:text-slate-100 font-medium">{{ delivery.fee.toLocaleString() }}</dd></div>
         </dl>
       </div>
 
@@ -78,12 +78,12 @@ onMounted(async () => {
         <button v-for="s in nextStatuses" :key="s" type="button" class="btn-secondary" @click="move(s)">{{ s }}</button>
       </div>
 
-      <h2 class="text-lg font-semibold mt-6 mb-3 text-slate-800">{{ t("status") }}</h2>
+      <h2 class="text-lg font-semibold mt-6 mb-3 text-slate-800 dark:text-slate-200">{{ t("status") }}</h2>
       <div class="card mb-4">
         <ol class="space-y-2">
-          <li v-for="h in delivery.history ?? []" :key="h.id" class="text-sm text-slate-700">
+          <li v-for="h in delivery.history ?? []" :key="h.id" class="text-sm text-slate-700 dark:text-slate-300">
             <span class="font-medium">{{ h.status }}</span> — {{ new Date(h.createdAt).toLocaleString() }}
-            <span v-if="h.note" class="text-slate-500"> · {{ h.note }}</span>
+            <span v-if="h.note" class="text-slate-500 dark:text-slate-400"> · {{ h.note }}</span>
           </li>
         </ol>
       </div>

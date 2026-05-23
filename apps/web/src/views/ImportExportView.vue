@@ -41,7 +41,7 @@ async function doImport(entity: ImportEntity, event: Event): Promise<void> {
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("importExport") }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("importExport") }}</h1>
     <p v-if="error" class="text-red-600 mb-4">{{ error }}</p>
 
     <div class="card overflow-x-auto mb-4">
@@ -51,7 +51,7 @@ async function doImport(entity: ImportEntity, event: Event): Promise<void> {
         </thead>
         <tbody>
           <tr v-for="entity in entities" :key="entity">
-            <td class="font-medium text-slate-800">{{ entity }}</td>
+            <td class="font-medium text-slate-800 dark:text-slate-200">{{ entity }}</td>
             <td>
               <button type="button" class="btn-secondary" @click="doExport(entity)">{{ t("exportData") }} .xlsx</button>
             </td>
@@ -69,8 +69,8 @@ async function doImport(entity: ImportEntity, event: Event): Promise<void> {
     </div>
 
     <div v-if="result" class="card">
-      <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("result") }} — {{ result.entity }}</h2>
-      <p class="text-sm text-slate-700 mb-2">{{ t("importData") }}: {{ result.data.created }}</p>
+      <h2 class="text-lg font-semibold mb-3 text-slate-800 dark:text-slate-200">{{ t("result") }} — {{ result.entity }}</h2>
+      <p class="text-sm text-slate-700 dark:text-slate-300 mb-2">{{ t("importData") }}: {{ result.data.created }}</p>
       <ul class="space-y-1">
         <li v-for="err in result.data.errors" :key="err.row" class="text-sm text-red-600">
           แถว {{ err.row }}: {{ err.message }}

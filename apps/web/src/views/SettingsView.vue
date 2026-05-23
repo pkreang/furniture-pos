@@ -37,7 +37,7 @@ onMounted(async () => {
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("settings") }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("settings") }}</h1>
     <div class="card max-w-3xl">
       <form @submit.prevent="save">
         <div class="form-row" v-for="k in keys" :key="k">

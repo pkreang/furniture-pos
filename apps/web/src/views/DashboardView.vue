@@ -26,25 +26,25 @@ onMounted(load);
 
 <template>
   <div class="p-6 max-w-screen-xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("dashboard") }}</h1>
+    <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("dashboard") }}</h1>
     <p v-if="error" class="text-red-600 mb-4">{{ error }}</p>
     <div v-else-if="data" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="card">
-        <h3 class="text-sm font-semibold text-slate-500 mb-2">{{ t("today") }} — {{ t("sales") }}</h3>
-        <p class="text-2xl font-bold text-slate-900">{{ data.todaySalesCount }} <span class="text-base font-normal text-slate-500">บิล</span></p>
-        <p class="text-sm text-slate-600 mt-1">{{ data.todaySalesTotal.toLocaleString() }} บาท</p>
+        <h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">{{ t("today") }} — {{ t("sales") }}</h3>
+        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ data.todaySalesCount }} <span class="text-base font-normal text-slate-500 dark:text-slate-400">บิล</span></p>
+        <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">{{ data.todaySalesTotal.toLocaleString() }} บาท</p>
       </div>
       <div class="card">
-        <h3 class="text-sm font-semibold text-slate-500 mb-2">{{ t("outstanding") }}</h3>
-        <p class="text-2xl font-bold text-slate-900">{{ data.outstandingTotal.toLocaleString() }} <span class="text-base font-normal text-slate-500">บาท</span></p>
+        <h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">{{ t("outstanding") }}</h3>
+        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ data.outstandingTotal.toLocaleString() }} <span class="text-base font-normal text-slate-500 dark:text-slate-400">บาท</span></p>
       </div>
       <div class="card">
-        <h3 class="text-sm font-semibold text-slate-500 mb-2">{{ t("pendingDeliveries") }}</h3>
-        <p class="text-2xl font-bold text-slate-900">{{ data.pendingDeliveries }}</p>
+        <h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">{{ t("pendingDeliveries") }}</h3>
+        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ data.pendingDeliveries }}</p>
       </div>
       <div class="card">
-        <h3 class="text-sm font-semibold text-slate-500 mb-2">{{ t("lowStock") }}</h3>
-        <p class="text-2xl font-bold text-slate-900">{{ data.lowStockCount }}</p>
+        <h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">{{ t("lowStock") }}</h3>
+        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ data.lowStockCount }}</p>
       </div>
     </div>
   </div>

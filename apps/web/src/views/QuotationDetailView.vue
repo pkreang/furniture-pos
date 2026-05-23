@@ -43,8 +43,8 @@ onMounted(async () => {
   <div class="p-6 max-w-screen-xl mx-auto">
     <p v-if="error" class="text-red-600 mb-4">{{ error }}</p>
     <template v-if="quotation">
-      <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("quotation") }} {{ quotation.number }}</h1>
-      <p class="mb-4 text-sm text-slate-700">{{ t("status") }}: <span class="badge bg-slate-100 text-slate-700">{{ quotation.status }}</span></p>
+      <h1 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{{ t("quotation") }} {{ quotation.number }}</h1>
+      <p class="mb-4 text-sm text-slate-700 dark:text-slate-300">{{ t("status") }}: <span class="badge bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">{{ quotation.status }}</span></p>
       <div class="card overflow-x-auto mb-4">
         <table class="data-table">
           <thead>
@@ -63,7 +63,7 @@ onMounted(async () => {
           </tbody>
         </table>
       </div>
-      <p class="mb-4 text-slate-800 font-semibold">{{ t("subtotal") }}: {{ quotation.subtotal.toLocaleString() }}</p>
+      <p class="mb-4 text-slate-800 dark:text-slate-200 font-semibold">{{ t("subtotal") }}: {{ quotation.subtotal.toLocaleString() }}</p>
 
       <div class="flex flex-wrap items-center gap-3">
         <button
