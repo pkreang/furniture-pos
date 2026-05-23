@@ -23,8 +23,13 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function logout(): Promise<void> {
-    await authApi.logout();
+    // Clear local state immediately so the UI reacts before any network
+    // round-trip — Render's free tier may take ~30s to wake from sleep,
+    // and the user pressing "log out" should not be held hostage to it.
     user.value = null;
+    // Server-side session cleanup is best-effort; the cookie still works
+    // its way to expiry via maxAge, and re-login replaces it cleanly.
+    authApi.logout().catch(() => {});
   }
 
   function hasPermission(key: string): boolean {
