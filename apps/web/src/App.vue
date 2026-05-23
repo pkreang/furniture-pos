@@ -143,6 +143,20 @@ async function doLogout(): Promise<void> {
         </div>
         <div>
           <div class="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            {{ t("navProcurement") }}
+          </div>
+          <div class="space-y-1">
+            <RouterLink
+              v-if="auth.hasPermission('suppliers.view')"
+              to="/suppliers"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("suppliers") }}</RouterLink
+            >
+          </div>
+        </div>
+        <div>
+          <div class="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
             {{ t("navCustomers") }}
           </div>
           <div class="space-y-1">

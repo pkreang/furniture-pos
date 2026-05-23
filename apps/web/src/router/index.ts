@@ -112,6 +112,24 @@ const routes: RouteRecordRaw[] = [
     meta: { permission: "customers.view" },
   },
   {
+    path: "/suppliers",
+    name: "suppliers",
+    component: () => import("../views/SupplierListView.vue"),
+    meta: { permission: "suppliers.view" },
+  },
+  {
+    path: "/suppliers/new",
+    name: "supplier-new",
+    component: () => import("../views/SupplierFormView.vue"),
+    meta: { permission: "suppliers.manage" },
+  },
+  {
+    path: "/suppliers/:id/edit",
+    name: "supplier-edit",
+    component: () => import("../views/SupplierFormView.vue"),
+    meta: { permission: "suppliers.manage" },
+  },
+  {
     path: "/pos",
     name: "pos",
     component: () => import("../views/PosView.vue"),

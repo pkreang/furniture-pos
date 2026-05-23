@@ -89,6 +89,13 @@ export default {
   navDelivery: "Delivery",
   navCatalog: "Catalog",
   navCustomers: "Customers",
+  navProcurement: "Procurement",
   navReports: "Reports",
   navAdmin: "Admin",
+  suppliers: "Suppliers",
+  supplier: "Supplier",
+  contactName: "Contact",
+  notes: "Notes",
+  active: "Active",
+  inactive: "Inactive",
 };
