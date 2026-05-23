@@ -19,6 +19,15 @@ describe("loadConfig", () => {
     expect(config.port).toBe(8080);
   });
 
+  it("prefers PORT over API_PORT so platforms like Render that inject PORT work", () => {
+    const config = loadConfig({
+      DATABASE_URL: "postgresql://x",
+      PORT: "10000",
+      API_PORT: "8080",
+    });
+    expect(config.port).toBe(10000);
+  });
+
   it("throws when DATABASE_URL is missing", () => {
     expect(() => loadConfig({})).toThrow(/DATABASE_URL/);
   });

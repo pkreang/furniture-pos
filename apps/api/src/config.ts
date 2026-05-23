@@ -17,7 +17,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const nodeEnv = env.NODE_ENV ?? "development";
   return {
     databaseUrl,
-    port: Number(env.API_PORT ?? 3000),
+    port: Number(env.PORT ?? env.API_PORT ?? 3000),
     nodeEnv,
     isProduction: nodeEnv === "production",
   };
