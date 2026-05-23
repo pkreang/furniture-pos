@@ -51,3 +51,23 @@ export async function nextPoCode(tx: Prisma.TransactionClient): Promise<string> 
   const seq = updated.next - 1;
   return `PO-${year}-${String(seq).padStart(4, "0")}`;
 }
+
+/**
+ * Allocates the next sales-order code for the current year, inside a
+ * transaction. SO codes are company-wide (not per-branch), and the year
+ * resets the sequence — `SO-YYYY-NNNN` with zero-padded 4-digit counter.
+ */
+export async function nextSoCode(tx: Prisma.TransactionClient): Promise<string> {
+  const year = new Date().getFullYear();
+  await tx.soSequence.upsert({
+    where: { year },
+    update: {},
+    create: { year, next: 1 },
+  });
+  const updated = await tx.soSequence.update({
+    where: { year },
+    data: { next: { increment: 1 } },
+  });
+  const seq = updated.next - 1;
+  return `SO-${year}-${String(seq).padStart(4, "0")}`;
+}

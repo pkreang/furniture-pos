@@ -36,6 +36,9 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: "po.view", description: "ดูใบสั่งซื้อ" },
   { key: "po.manage", description: "สร้าง/แก้ไขใบสั่งซื้อ" },
   { key: "po.receive", description: "รับของเข้าตามใบสั่งซื้อ" },
+  { key: "so.view", description: "ดูใบสั่งขาย" },
+  { key: "so.manage", description: "สร้าง/แก้ไขใบสั่งขาย" },
+  { key: "so.fulfill", description: "ส่งของตามใบสั่งขาย" },
   { key: "sales.create", description: "ขายสินค้า (เปิดบิล)" },
   { key: "sales.view", description: "ดูประวัติการขาย" },
   { key: "sales.void", description: "ยกเลิกบิลและคืนเงิน" },
@@ -80,6 +83,9 @@ export const ROLES: RoleDef[] = [
       "reports.generate",
       "po.view",
       "po.receive",
+      "so.view",
+      "so.manage",
+      "so.fulfill",
     ],
   },
   {
@@ -101,6 +107,8 @@ export const ROLES: RoleDef[] = [
       "delivery.manage",
       "reports.view",
       "reports.generate",
+      "so.view",
+      "so.manage",
     ],
   },
   {
@@ -120,6 +128,7 @@ export const ROLES: RoleDef[] = [
       "delivery.view",
       "reports.view",
       "po.view",
+      "so.view",
     ],
   },
 ];

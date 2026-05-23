@@ -4,6 +4,8 @@ export interface StockLevel {
   productId: number;
   branchId: number;
   quantity: number;
+  reservedQty: number;
+  available: number;
   product: { sku: string; name: string };
   branch: { name: string; code: string };
 }
