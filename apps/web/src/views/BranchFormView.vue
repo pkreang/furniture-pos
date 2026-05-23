@@ -37,15 +37,29 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <section>
-    <h2>{{ t("branches") }}</h2>
-    <form @submit.prevent="submit">
-      <label>ชื่อ<input v-model="form.name" /></label>
-      <label>รหัส<input v-model="form.code" /></label>
-      <label><input v-model="form.isWarehouse" type="checkbox" /> เป็นคลังสินค้า</label>
-      <p v-if="error" class="error">{{ error }}</p>
-      <button type="submit">{{ t("save") }}</button>
-      <RouterLink to="/branches">{{ t("cancel") }}</RouterLink>
-    </form>
-  </section>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("branches") }}</h1>
+    <div class="card max-w-lg">
+      <form @submit.prevent="submit">
+        <div class="form-row">
+          <label>ชื่อ</label>
+          <input v-model="form.name" class="input" />
+        </div>
+        <div class="form-row">
+          <label>รหัส</label>
+          <input v-model="form.code" class="input" />
+        </div>
+        <div class="form-row">
+          <label class="flex items-center gap-2 font-normal">
+            <input v-model="form.isWarehouse" type="checkbox" /> เป็นคลังสินค้า
+          </label>
+        </div>
+        <p v-if="error" class="text-red-600 text-sm mb-3">{{ error }}</p>
+        <div class="flex items-center gap-3">
+          <button type="submit" class="btn-primary">{{ t("save") }}</button>
+          <RouterLink to="/branches" class="btn-secondary">{{ t("cancel") }}</RouterLink>
+        </div>
+      </form>
+    </div>
+  </div>
 </template>

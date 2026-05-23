@@ -36,16 +36,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section>
-    <h2>{{ t("settings") }}</h2>
-    <form @submit.prevent="save">
-      <label v-for="k in keys" :key="k">
-        {{ k }}
-        <input v-model="settings[k]" />
-      </label>
-      <p v-if="error" class="error">{{ error }}</p>
-      <p v-if="saved">{{ t("save") }} ✓</p>
-      <button type="submit">{{ t("save") }}</button>
-    </form>
-  </section>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("settings") }}</h1>
+    <div class="card max-w-3xl">
+      <form @submit.prevent="save">
+        <div class="form-row" v-for="k in keys" :key="k">
+          <label>{{ k }}</label>
+          <input v-model="settings[k]" class="input" />
+        </div>
+        <p v-if="error" class="text-red-600 text-sm mb-3">{{ error }}</p>
+        <p v-if="saved" class="text-emerald-600 text-sm mb-3">{{ t("save") }} ✓</p>
+        <button type="submit" class="btn-primary">{{ t("save") }}</button>
+      </form>
+    </div>
+  </div>
 </template>

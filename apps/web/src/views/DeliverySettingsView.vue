@@ -60,54 +60,73 @@ onMounted(load);
 </script>
 
 <template>
-  <section>
-    <h2>{{ t("deliverySettings") }}</h2>
-    <p v-if="error" class="error">{{ error }}</p>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("deliverySettings") }}</h1>
+    <p v-if="error" class="text-red-600 mb-4">{{ error }}</p>
 
-    <h3>{{ t("zone") }}</h3>
-    <ul><li v-for="z in zones" :key="z.id">{{ z.name }} — {{ t("fee") }} {{ z.fee }}</li></ul>
-    <form v-if="canManage" @submit.prevent="run(() => createZone(zoneForm.name, zoneForm.fee))">
-      <input v-model="zoneForm.name" :placeholder="t('zone')" />
-      <input v-model.number="zoneForm.fee" type="number" min="0" :placeholder="t('fee')" />
-      <button type="submit">{{ t("add") }}</button>
-    </form>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="card">
+        <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("zone") }}</h2>
+        <ul class="divide-y divide-slate-200 mb-4">
+          <li v-for="z in zones" :key="z.id" class="py-2 text-sm text-slate-700">
+            {{ z.name }} — <span class="text-slate-500">{{ t("fee") }} {{ z.fee }}</span>
+          </li>
+        </ul>
+        <form v-if="canManage" class="flex flex-wrap items-end gap-2" @submit.prevent="run(() => createZone(zoneForm.name, zoneForm.fee))">
+          <input v-model="zoneForm.name" :placeholder="t('zone')" class="input flex-1 min-w-[140px]" />
+          <input v-model.number="zoneForm.fee" type="number" min="0" :placeholder="t('fee')" class="input w-28" />
+          <button type="submit" class="btn-primary">{{ t("add") }}</button>
+        </form>
+      </div>
 
-    <h3>{{ t("channel") }}</h3>
-    <ul><li v-for="c in channels" :key="c.id">{{ c.name }} ({{ c.type }})</li></ul>
-    <form v-if="canManage" @submit.prevent="run(() => createChannel(channelForm.name, channelForm.type))">
-      <input v-model="channelForm.name" :placeholder="t('channel')" />
-      <select v-model="channelForm.type">
-        <option value="IN_HOUSE">IN_HOUSE</option>
-        <option value="COURIER">COURIER</option>
-      </select>
-      <button type="submit">{{ t("add") }}</button>
-    </form>
+      <div class="card">
+        <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("channel") }}</h2>
+        <ul class="divide-y divide-slate-200 mb-4">
+          <li v-for="c in channels" :key="c.id" class="py-2 text-sm text-slate-700">{{ c.name }} <span class="text-slate-500">({{ c.type }})</span></li>
+        </ul>
+        <form v-if="canManage" class="flex flex-wrap items-end gap-2" @submit.prevent="run(() => createChannel(channelForm.name, channelForm.type))">
+          <input v-model="channelForm.name" :placeholder="t('channel')" class="input flex-1 min-w-[140px]" />
+          <select v-model="channelForm.type" class="input w-40">
+            <option value="IN_HOUSE">IN_HOUSE</option>
+            <option value="COURIER">COURIER</option>
+          </select>
+          <button type="submit" class="btn-primary">{{ t("add") }}</button>
+        </form>
+      </div>
 
-    <h3>{{ t("team") }}</h3>
-    <ul><li v-for="tm in teams" :key="tm.id">{{ tm.name }}</li></ul>
-    <form v-if="canManage" @submit.prevent="run(() => createTeam(teamForm.name, teamForm.branchId))">
-      <input v-model="teamForm.name" :placeholder="t('team')" />
-      <select v-model.number="teamForm.branchId">
-        <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
-      </select>
-      <button type="submit">{{ t("add") }}</button>
-    </form>
+      <div class="card">
+        <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("team") }}</h2>
+        <ul class="divide-y divide-slate-200 mb-4">
+          <li v-for="tm in teams" :key="tm.id" class="py-2 text-sm text-slate-700">{{ tm.name }}</li>
+        </ul>
+        <form v-if="canManage" class="flex flex-wrap items-end gap-2" @submit.prevent="run(() => createTeam(teamForm.name, teamForm.branchId))">
+          <input v-model="teamForm.name" :placeholder="t('team')" class="input flex-1 min-w-[140px]" />
+          <select v-model.number="teamForm.branchId" class="input w-40">
+            <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
+          </select>
+          <button type="submit" class="btn-primary">{{ t("add") }}</button>
+        </form>
+      </div>
 
-    <h3>{{ t("driver") }}</h3>
-    <ul>
-      <li v-for="d in drivers" :key="d.id">
-        {{ d.name }}<span v-if="!d.isActive"> (ปิดใช้งาน)</span>
-      </li>
-    </ul>
-    <form
-      v-if="canManage && teams.length"
-      @submit.prevent="run(() => createDriver(driverForm.name, driverForm.teamId))"
-    >
-      <input v-model="driverForm.name" :placeholder="t('driver')" />
-      <select v-model.number="driverForm.teamId">
-        <option v-for="tm in teams" :key="tm.id" :value="tm.id">{{ tm.name }}</option>
-      </select>
-      <button type="submit">{{ t("add") }}</button>
-    </form>
-  </section>
+      <div class="card">
+        <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("driver") }}</h2>
+        <ul class="divide-y divide-slate-200 mb-4">
+          <li v-for="d in drivers" :key="d.id" class="py-2 text-sm text-slate-700">
+            {{ d.name }}<span v-if="!d.isActive" class="text-slate-500"> (ปิดใช้งาน)</span>
+          </li>
+        </ul>
+        <form
+          v-if="canManage && teams.length"
+          class="flex flex-wrap items-end gap-2"
+          @submit.prevent="run(() => createDriver(driverForm.name, driverForm.teamId))"
+        >
+          <input v-model="driverForm.name" :placeholder="t('driver')" class="input flex-1 min-w-[140px]" />
+          <select v-model.number="driverForm.teamId" class="input w-40">
+            <option v-for="tm in teams" :key="tm.id" :value="tm.id">{{ tm.name }}</option>
+          </select>
+          <button type="submit" class="btn-primary">{{ t("add") }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
 </template>

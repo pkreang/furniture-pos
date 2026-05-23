@@ -17,14 +17,16 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section>
-    <h2>{{ t("roles") }}</h2>
-    <p v-if="error" class="error">{{ error }}</p>
-    <ul v-else>
-      <li v-for="r in roles" :key="r.id">
-        <RouterLink :to="`/roles/${r.id}`">{{ r.name }}</RouterLink>
-        — {{ r.permissionKeys.length }} สิทธิ์
-      </li>
-    </ul>
-  </section>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("roles") }}</h1>
+    <p v-if="error" class="text-red-600">{{ error }}</p>
+    <div v-else class="card">
+      <ul class="divide-y divide-slate-200">
+        <li v-for="r in roles" :key="r.id" class="py-3 flex items-center justify-between">
+          <RouterLink :to="`/roles/${r.id}`" class="text-indigo-600 hover:text-indigo-700 font-medium">{{ r.name }}</RouterLink>
+          <span class="text-sm text-slate-500">{{ r.permissionKeys.length }} สิทธิ์</span>
+        </li>
+      </ul>
+    </div>
+  </div>
 </template>

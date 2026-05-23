@@ -24,21 +24,23 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section>
-    <p v-if="error" class="error">{{ error }}</p>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <p v-if="error" class="text-red-600 mb-4">{{ error }}</p>
     <template v-if="z">
-      <h2>{{ t("zReport") }} — {{ z.branch?.name }} {{ z.businessDate.slice(0, 10) }}</h2>
-      <dl>
-        <dt>{{ t("sales") }}</dt><dd>{{ z.salesCount }} บิล</dd>
-        <dt>{{ t("total") }}</dt><dd>{{ money(z.grossTotal) }}</dd>
-        <dt>{{ t("vat") }}</dt><dd>{{ money(z.vatTotal) }}</dd>
-        <dt>{{ t("discount") }}</dt><dd>{{ money(z.discountTotal) }}</dd>
-        <dt>เงินสด</dt><dd>{{ money(z.cashTotal) }}</dd>
-        <dt>โอนเงิน</dt><dd>{{ money(z.transferTotal) }}</dd>
-        <dt>บัตร</dt><dd>{{ money(z.cardTotal) }}</dd>
-        <dt>{{ t("voided") }}</dt><dd>{{ z.voidedCount }} บิล / {{ money(z.voidedTotal) }}</dd>
-      </dl>
-      <RouterLink to="/z-reports">{{ t("cancel") }}</RouterLink>
+      <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("zReport") }} — {{ z.branch?.name }} {{ z.businessDate.slice(0, 10) }}</h1>
+      <div class="card mb-4">
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+          <div><dt class="text-slate-500">{{ t("sales") }}</dt><dd class="text-slate-900 font-medium">{{ z.salesCount }} บิล</dd></div>
+          <div><dt class="text-slate-500">{{ t("total") }}</dt><dd class="text-slate-900 font-medium">{{ money(z.grossTotal) }}</dd></div>
+          <div><dt class="text-slate-500">{{ t("vat") }}</dt><dd class="text-slate-900 font-medium">{{ money(z.vatTotal) }}</dd></div>
+          <div><dt class="text-slate-500">{{ t("discount") }}</dt><dd class="text-slate-900 font-medium">{{ money(z.discountTotal) }}</dd></div>
+          <div><dt class="text-slate-500">เงินสด</dt><dd class="text-slate-900 font-medium">{{ money(z.cashTotal) }}</dd></div>
+          <div><dt class="text-slate-500">โอนเงิน</dt><dd class="text-slate-900 font-medium">{{ money(z.transferTotal) }}</dd></div>
+          <div><dt class="text-slate-500">บัตร</dt><dd class="text-slate-900 font-medium">{{ money(z.cardTotal) }}</dd></div>
+          <div><dt class="text-slate-500">{{ t("voided") }}</dt><dd class="text-slate-900 font-medium">{{ z.voidedCount }} บิล / {{ money(z.voidedTotal) }}</dd></div>
+        </dl>
+      </div>
+      <RouterLink to="/z-reports" class="btn-secondary">{{ t("cancel") }}</RouterLink>
     </template>
-  </section>
+  </div>
 </template>

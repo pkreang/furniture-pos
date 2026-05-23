@@ -67,33 +67,46 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <section>
-    <h2>{{ t("users") }}</h2>
-    <form @submit.prevent="submit">
-      <label>{{ t("username") }}
-        <input v-model="form.username" :disabled="editingId !== null" />
-      </label>
-      <label>ชื่อ<input v-model="form.name" /></label>
-      <label v-if="editingId === null">{{ t("password") }}
-        <input v-model="form.password" type="password" minlength="8" />
-      </label>
-      <label>{{ t("roles") }}
-        <select v-model.number="form.roleId">
-          <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
-        </select>
-      </label>
-      <label>{{ t("branches") }}
-        <select v-model.number="form.branchId">
-          <option :value="null">—</option>
-          <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
-        </select>
-      </label>
-      <label v-if="editingId !== null">
-        <input v-model="form.isActive" type="checkbox" /> ใช้งานอยู่
-      </label>
-      <p v-if="error" class="error">{{ error }}</p>
-      <button type="submit">{{ t("save") }}</button>
-      <RouterLink to="/users">{{ t("cancel") }}</RouterLink>
-    </form>
-  </section>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("users") }}</h1>
+    <div class="card max-w-2xl">
+      <form @submit.prevent="submit">
+        <div class="form-row">
+          <label>{{ t("username") }}</label>
+          <input v-model="form.username" :disabled="editingId !== null" class="input disabled:bg-slate-100" />
+        </div>
+        <div class="form-row">
+          <label>ชื่อ</label>
+          <input v-model="form.name" class="input" />
+        </div>
+        <div v-if="editingId === null" class="form-row">
+          <label>{{ t("password") }}</label>
+          <input v-model="form.password" type="password" minlength="8" class="input" />
+        </div>
+        <div class="form-row">
+          <label>{{ t("roles") }}</label>
+          <select v-model.number="form.roleId" class="input">
+            <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>{{ t("branches") }}</label>
+          <select v-model.number="form.branchId" class="input">
+            <option :value="null">—</option>
+            <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
+          </select>
+        </div>
+        <div v-if="editingId !== null" class="form-row">
+          <label class="flex items-center gap-2 font-normal">
+            <input v-model="form.isActive" type="checkbox" /> ใช้งานอยู่
+          </label>
+        </div>
+        <p v-if="error" class="text-red-600 text-sm mb-3">{{ error }}</p>
+        <div class="flex items-center gap-3">
+          <button type="submit" class="btn-primary">{{ t("save") }}</button>
+          <RouterLink to="/users" class="btn-secondary">{{ t("cancel") }}</RouterLink>
+        </div>
+      </form>
+    </div>
+  </div>
 </template>

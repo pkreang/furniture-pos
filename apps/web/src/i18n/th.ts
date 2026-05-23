@@ -84,4 +84,10 @@ export default {
   importData: "นำเข้า",
   value: "ค่า",
   result: "ผลลัพธ์",
+  navSales: "การขาย",
+  navDelivery: "การจัดส่ง",
+  navCatalog: "สินค้า",
+  navCustomers: "ลูกค้า",
+  navReports: "รายงาน",
+  navAdmin: "ระบบ",
 };

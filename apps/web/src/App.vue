@@ -28,33 +28,207 @@ async function doLogout(): Promise<void> {
 </script>
 
 <template>
-  <header>
-    <h1>{{ t("appName") }}</h1>
-    <nav v-if="signedIn">
-      <RouterLink v-if="auth.hasPermission('reports.view')" to="/dashboard">{{ t("dashboard") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('sales.create')" to="/pos">{{ t("pos") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('sales.view')" to="/sales">{{ t("sales") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('sales.view')" to="/outstanding">{{ t("outstanding") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('quotations.view')" to="/quotations">{{ t("quotations") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('delivery.view')" to="/deliveries">{{ t("deliveries") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('delivery.view')" to="/delivery-settings">{{ t("deliverySettings") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('branches.view')" to="/branches">{{ t("branches") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('catalog.view')" to="/categories">{{ t("categories") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('catalog.view')" to="/products">{{ t("products") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('stock.view')" to="/stock">{{ t("stock") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('stock.view')" to="/transfers">{{ t("transfers") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('customers.view')" to="/customers">{{ t("customers") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('reports.view')" to="/z-reports">{{ t("zReport") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('users.view')" to="/users">{{ t("users") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('roles.view')" to="/roles">{{ t("roles") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('settings.manage')" to="/settings">{{ t("settings") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('audit.view')" to="/audit-log">{{ t("auditLog") }}</RouterLink>
-      <RouterLink v-if="auth.hasPermission('data.manage')" to="/import-export">{{ t("importExport") }}</RouterLink>
-      <span>{{ auth.user?.name }}</span>
-      <button type="button" @click="doLogout">{{ t("logout") }}</button>
-    </nav>
-  </header>
-  <main>
+  <div v-if="signedIn" class="flex h-screen bg-slate-50">
+    <aside class="w-60 bg-slate-800 text-slate-300 overflow-y-auto flex-shrink-0">
+      <div class="p-4 border-b border-slate-700">
+        <h1 class="text-white font-bold text-lg">{{ t("appName") }}</h1>
+      </div>
+      <nav class="p-2 space-y-4">
+        <div>
+          <div class="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            {{ t("navSales") }}
+          </div>
+          <div class="space-y-1">
+            <RouterLink
+              v-if="auth.hasPermission('reports.view')"
+              to="/dashboard"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("dashboard") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('sales.create')"
+              to="/pos"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("pos") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('sales.view')"
+              to="/sales"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("sales") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('sales.view')"
+              to="/outstanding"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("outstanding") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('quotations.view')"
+              to="/quotations"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("quotations") }}</RouterLink
+            >
+          </div>
+        </div>
+        <div>
+          <div class="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            {{ t("navDelivery") }}
+          </div>
+          <div class="space-y-1">
+            <RouterLink
+              v-if="auth.hasPermission('delivery.view')"
+              to="/deliveries"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("deliveries") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('delivery.view')"
+              to="/delivery-settings"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("deliverySettings") }}</RouterLink
+            >
+          </div>
+        </div>
+        <div>
+          <div class="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            {{ t("navCatalog") }}
+          </div>
+          <div class="space-y-1">
+            <RouterLink
+              v-if="auth.hasPermission('branches.view')"
+              to="/branches"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("branches") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('catalog.view')"
+              to="/categories"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("categories") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('catalog.view')"
+              to="/products"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("products") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('stock.view')"
+              to="/stock"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("stock") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('stock.view')"
+              to="/transfers"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("transfers") }}</RouterLink
+            >
+          </div>
+        </div>
+        <div>
+          <div class="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            {{ t("navCustomers") }}
+          </div>
+          <div class="space-y-1">
+            <RouterLink
+              v-if="auth.hasPermission('customers.view')"
+              to="/customers"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("customers") }}</RouterLink
+            >
+          </div>
+        </div>
+        <div>
+          <div class="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            {{ t("navReports") }}
+          </div>
+          <div class="space-y-1">
+            <RouterLink
+              v-if="auth.hasPermission('reports.view')"
+              to="/z-reports"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("zReport") }}</RouterLink
+            >
+          </div>
+        </div>
+        <div>
+          <div class="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            {{ t("navAdmin") }}
+          </div>
+          <div class="space-y-1">
+            <RouterLink
+              v-if="auth.hasPermission('users.view')"
+              to="/users"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("users") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('roles.view')"
+              to="/roles"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("roles") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('settings.manage')"
+              to="/settings"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("settings") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('audit.view')"
+              to="/audit-log"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("auditLog") }}</RouterLink
+            >
+            <RouterLink
+              v-if="auth.hasPermission('data.manage')"
+              to="/import-export"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("importExport") }}</RouterLink
+            >
+          </div>
+        </div>
+      </nav>
+    </aside>
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header
+        class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between flex-shrink-0"
+      >
+        <div></div>
+        <div class="flex items-center gap-4">
+          <span class="text-sm text-slate-600">{{ auth.user?.name }}</span>
+          <button type="button" class="btn-secondary text-sm" @click="doLogout">
+            {{ t("logout") }}
+          </button>
+        </div>
+      </header>
+      <main class="flex-1 overflow-y-auto bg-slate-50">
+        <RouterView />
+      </main>
+    </div>
+  </div>
+  <div v-else class="min-h-screen bg-slate-50">
     <RouterView />
-  </main>
+  </div>
 </template>

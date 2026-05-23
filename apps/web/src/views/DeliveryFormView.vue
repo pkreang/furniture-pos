@@ -76,43 +76,66 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section>
-    <h2>{{ t("book") }}</h2>
-    <form @submit.prevent="submit">
-      <label>{{ t("receipt") }}
-        <select v-model.number="form.saleId">
-          <option v-for="s in sales" :key="s.id" :value="s.id">{{ s.number }}</option>
-        </select>
-      </label>
-      <label>{{ t("zone") }}
-        <select v-model.number="form.zoneId">
-          <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }} ({{ z.fee }})</option>
-        </select>
-      </label>
-      <label>{{ t("channel") }}
-        <select v-model.number="form.channelId">
-          <option v-for="c in channels" :key="c.id" :value="c.id">{{ c.name }}</option>
-        </select>
-      </label>
-      <label>{{ t("team") }}
-        <select v-model.number="form.teamId">
-          <option :value="0">—</option>
-          <option v-for="tm in teams" :key="tm.id" :value="tm.id">{{ tm.name }}</option>
-        </select>
-      </label>
-      <label>{{ t("driver") }}
-        <select v-model.number="form.driverId">
-          <option :value="0">—</option>
-          <option v-for="d in drivers" :key="d.id" :value="d.id">{{ d.name }}</option>
-        </select>
-      </label>
-      <label>{{ t("scheduledDate") }}<input v-model="form.scheduledDate" type="date" /></label>
-      <label>{{ t("address") }}<input v-model="form.addressText" /></label>
-      <label>{{ t("recipient") }}<input v-model="form.recipientName" /></label>
-      <label>{{ t("phone") }}<input v-model="form.recipientPhone" /></label>
-      <p v-if="error" class="error">{{ error }}</p>
-      <button type="submit" :disabled="busy">{{ t("save") }}</button>
-      <RouterLink to="/deliveries">{{ t("cancel") }}</RouterLink>
-    </form>
-  </section>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("book") }}</h1>
+    <div class="card max-w-3xl">
+      <form @submit.prevent="submit">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="form-row">
+            <label>{{ t("receipt") }}</label>
+            <select v-model.number="form.saleId" class="input">
+              <option v-for="s in sales" :key="s.id" :value="s.id">{{ s.number }}</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>{{ t("zone") }}</label>
+            <select v-model.number="form.zoneId" class="input">
+              <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }} ({{ z.fee }})</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>{{ t("channel") }}</label>
+            <select v-model.number="form.channelId" class="input">
+              <option v-for="c in channels" :key="c.id" :value="c.id">{{ c.name }}</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>{{ t("team") }}</label>
+            <select v-model.number="form.teamId" class="input">
+              <option :value="0">—</option>
+              <option v-for="tm in teams" :key="tm.id" :value="tm.id">{{ tm.name }}</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>{{ t("driver") }}</label>
+            <select v-model.number="form.driverId" class="input">
+              <option :value="0">—</option>
+              <option v-for="d in drivers" :key="d.id" :value="d.id">{{ d.name }}</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>{{ t("scheduledDate") }}</label>
+            <input v-model="form.scheduledDate" type="date" class="input" />
+          </div>
+          <div class="form-row md:col-span-2">
+            <label>{{ t("address") }}</label>
+            <input v-model="form.addressText" class="input" />
+          </div>
+          <div class="form-row">
+            <label>{{ t("recipient") }}</label>
+            <input v-model="form.recipientName" class="input" />
+          </div>
+          <div class="form-row">
+            <label>{{ t("phone") }}</label>
+            <input v-model="form.recipientPhone" class="input" />
+          </div>
+        </div>
+        <p v-if="error" class="text-red-600 text-sm mb-3">{{ error }}</p>
+        <div class="flex items-center gap-3">
+          <button type="submit" :disabled="busy" class="btn-primary">{{ t("save") }}</button>
+          <RouterLink to="/deliveries" class="btn-secondary">{{ t("cancel") }}</RouterLink>
+        </div>
+      </form>
+    </div>
+  </div>
 </template>

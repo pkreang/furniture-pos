@@ -43,25 +43,29 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <section>
-    <h2>{{ t("roles") }} — {{ roleName }}</h2>
-    <ul>
-      <li v-for="p in permissions" :key="p.key">
-        <label>
-          <input
-            type="checkbox"
-            :checked="selected.has(p.key)"
-            :disabled="!auth.hasPermission('roles.manage')"
-            @change="toggle(p.key)"
-          />
-          {{ p.description }} <code>({{ p.key }})</code>
-        </label>
-      </li>
-    </ul>
-    <p v-if="error" class="error">{{ error }}</p>
-    <button v-if="auth.hasPermission('roles.manage')" type="button" @click="save">
-      {{ t("save") }}
-    </button>
-    <RouterLink to="/roles">{{ t("cancel") }}</RouterLink>
-  </section>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("roles") }} — {{ roleName }}</h1>
+    <div class="card mb-4">
+      <ul class="space-y-2">
+        <li v-for="p in permissions" :key="p.key">
+          <label class="flex items-center gap-2 text-sm text-slate-700 font-normal">
+            <input
+              type="checkbox"
+              :checked="selected.has(p.key)"
+              :disabled="!auth.hasPermission('roles.manage')"
+              @change="toggle(p.key)"
+            />
+            {{ p.description }} <code class="text-xs bg-slate-100 px-1 py-0.5 rounded text-slate-600">({{ p.key }})</code>
+          </label>
+        </li>
+      </ul>
+    </div>
+    <p v-if="error" class="text-red-600 text-sm mb-3">{{ error }}</p>
+    <div class="flex items-center gap-3">
+      <button v-if="auth.hasPermission('roles.manage')" type="button" class="btn-primary" @click="save">
+        {{ t("save") }}
+      </button>
+      <RouterLink to="/roles" class="btn-secondary">{{ t("cancel") }}</RouterLink>
+    </div>
+  </div>
 </template>
