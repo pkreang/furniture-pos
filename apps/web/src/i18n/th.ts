@@ -89,6 +89,13 @@ export default {
   navDelivery: "การจัดส่ง",
   navCatalog: "สินค้า",
   navCustomers: "ลูกค้า",
+  navProcurement: "จัดซื้อ",
   navReports: "รายงาน",
   navAdmin: "ระบบ",
+  suppliers: "ซัพพลายเออร์",
+  supplier: "ซัพพลายเออร์",
+  contactName: "ผู้ติดต่อ",
+  notes: "หมายเหตุ",
+  active: "ใช้งาน",
+  inactive: "ไม่ใช้งาน",
 };

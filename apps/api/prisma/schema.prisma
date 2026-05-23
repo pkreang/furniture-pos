@@ -230,6 +230,21 @@ model Customer {
   @@map("customers")
 }
 
+model Supplier {
+  id          Int      @id @default(autoincrement())
+  name        String
+  contactName String?  @map("contact_name")
+  phone       String?
+  email       String?
+  address     String?
+  taxId       String?  @map("tax_id")
+  notes       String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("suppliers")
+}
+
 model PointTransaction {
   id         Int                    @id @default(autoincrement())
   customerId Int                    @map("customer_id")
