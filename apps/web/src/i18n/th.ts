@@ -1,5 +1,5 @@
 export default {
-  appName: "Furniture House POS",
+  appName: "Elite POS",
   branches: "สาขา",
   login: "เข้าสู่ระบบ",
   logout: "ออกจากระบบ",
