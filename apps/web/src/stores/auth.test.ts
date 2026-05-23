@@ -46,4 +46,31 @@ describe("auth store", () => {
     await store.logout();
     expect(store.user).toBeNull();
   });
+
+  it("clears the user even if the logout API call fails", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 500, json: async () => null })));
+    const store = useAuthStore();
+    store.user = {
+      id: 1, username: "a", name: "A", roleKey: "admin", branchId: null,
+      isBranchScoped: false, discountMaxPercent: null, permissions: [], mustChangePassword: false,
+    };
+    await store.logout();
+    expect(store.user).toBeNull();
+  });
+
+  it("clears the user immediately without waiting for the logout API", async () => {
+    let resolveFetch!: (value: unknown) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise((resolve) => { resolveFetch = resolve; })),
+    );
+    const store = useAuthStore();
+    store.user = {
+      id: 1, username: "a", name: "A", roleKey: "admin", branchId: null,
+      isBranchScoped: false, discountMaxPercent: null, permissions: [], mustChangePassword: false,
+    };
+    await store.logout();
+    expect(store.user).toBeNull(); // already cleared before fetch resolves
+    resolveFetch({ ok: true, json: async () => ({ ok: true }) });
+  });
 });
