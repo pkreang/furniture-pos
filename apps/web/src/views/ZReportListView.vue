@@ -42,37 +42,47 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section>
-    <h2>{{ t("zReport") }}</h2>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("zReport") }}</h1>
 
-    <form v-if="canGenerate" @submit.prevent="generate">
-      <select v-model.number="form.branchId">
-        <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
-      </select>
-      <input v-model="form.businessDate" type="date" />
-      <button type="submit">{{ t("generate") }}</button>
-    </form>
-    <p v-if="error" class="error">{{ error }}</p>
+    <div v-if="canGenerate" class="card mb-4">
+      <form class="flex flex-wrap items-end gap-3" @submit.prevent="generate">
+        <div class="form-row mb-0">
+          <label>{{ t("branches") }}</label>
+          <select v-model.number="form.branchId" class="input">
+            <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
+          </select>
+        </div>
+        <div class="form-row mb-0">
+          <label>{{ t("businessDate") }}</label>
+          <input v-model="form.businessDate" type="date" class="input" />
+        </div>
+        <button type="submit" class="btn-primary">{{ t("generate") }}</button>
+      </form>
+    </div>
+    <p v-if="error" class="text-red-600 mb-3">{{ error }}</p>
 
-    <table>
-      <thead>
-        <tr>
-          <th>{{ t("businessDate") }}</th>
-          <th>{{ t("branches") }}</th>
-          <th>{{ t("sales") }}</th>
-          <th>{{ t("total") }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="z in reports" :key="z.id">
-          <td>
-            <RouterLink :to="`/z-reports/${z.id}`">{{ z.businessDate.slice(0, 10) }}</RouterLink>
-          </td>
-          <td>{{ z.branch?.name }}</td>
-          <td>{{ z.salesCount }}</td>
-          <td>{{ z.grossTotal.toLocaleString() }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+    <div class="card overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ t("businessDate") }}</th>
+            <th>{{ t("branches") }}</th>
+            <th>{{ t("sales") }}</th>
+            <th>{{ t("total") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="z in reports" :key="z.id">
+            <td>
+              <RouterLink :to="`/z-reports/${z.id}`" class="text-indigo-600 hover:text-indigo-700 font-medium">{{ z.businessDate.slice(0, 10) }}</RouterLink>
+            </td>
+            <td>{{ z.branch?.name }}</td>
+            <td>{{ z.salesCount }}</td>
+            <td>{{ z.grossTotal.toLocaleString() }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>

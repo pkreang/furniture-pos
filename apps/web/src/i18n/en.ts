@@ -84,4 +84,10 @@ export default {
   importData: "Import",
   value: "Value",
   result: "Result",
+  navSales: "Sales",
+  navDelivery: "Delivery",
+  navCatalog: "Catalog",
+  navCustomers: "Customers",
+  navReports: "Reports",
+  navAdmin: "Admin",
 };

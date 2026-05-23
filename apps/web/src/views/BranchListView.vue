@@ -12,22 +12,28 @@ onMounted(() => store.load());
 </script>
 
 <template>
-  <section>
-    <header>
-      <h2>{{ t("branches") }}</h2>
-      <RouterLink v-if="auth.hasPermission('branches.manage')" to="/branches/new">
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <header class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-bold text-slate-900">{{ t("branches") }}</h1>
+      <RouterLink v-if="auth.hasPermission('branches.manage')" to="/branches/new" class="btn-primary">
         + {{ t("branches") }}
       </RouterLink>
     </header>
-    <p v-if="store.loading">…</p>
-    <p v-else-if="store.error" class="error">{{ store.error }}</p>
-    <ul v-else>
-      <li v-for="b in store.branches" :key="b.id">
-        {{ b.name }} ({{ b.code }})
-        <RouterLink v-if="auth.hasPermission('branches.manage')" :to="`/branches/${b.id}/edit`">
-          {{ t("save") }}
-        </RouterLink>
-      </li>
-    </ul>
-  </section>
+    <p v-if="store.loading" class="text-slate-500">…</p>
+    <p v-else-if="store.error" class="text-red-600">{{ store.error }}</p>
+    <div v-else class="card">
+      <ul class="divide-y divide-slate-200">
+        <li v-for="b in store.branches" :key="b.id" class="py-3 flex items-center justify-between">
+          <span class="text-slate-800">{{ b.name }} <span class="text-slate-500">({{ b.code }})</span></span>
+          <RouterLink
+            v-if="auth.hasPermission('branches.manage')"
+            :to="`/branches/${b.id}/edit`"
+            class="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+          >
+            {{ t("save") }}
+          </RouterLink>
+        </li>
+      </ul>
+    </div>
+  </div>
 </template>

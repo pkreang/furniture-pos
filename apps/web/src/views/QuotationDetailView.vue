@@ -40,44 +40,50 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section>
-    <p v-if="error" class="error">{{ error }}</p>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <p v-if="error" class="text-red-600 mb-4">{{ error }}</p>
     <template v-if="quotation">
-      <h2>{{ t("quotation") }} {{ quotation.number }}</h2>
-      <p>{{ t("status") }}: {{ quotation.status }}</p>
-      <table>
-        <thead>
-          <tr>
-            <th>{{ t("products") }}</th><th>{{ t("quantity") }}</th>
-            <th>{{ t("price") }}</th><th>{{ t("total") }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in quotation.items ?? []" :key="item.id">
-            <td>{{ item.productName }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>{{ item.unitPrice.toLocaleString() }}</td>
-            <td>{{ item.lineTotal.toLocaleString() }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <p>{{ t("subtotal") }}: {{ quotation.subtotal.toLocaleString() }}</p>
+      <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("quotation") }} {{ quotation.number }}</h1>
+      <p class="mb-4 text-sm text-slate-700">{{ t("status") }}: <span class="badge bg-slate-100 text-slate-700">{{ quotation.status }}</span></p>
+      <div class="card overflow-x-auto mb-4">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{{ t("products") }}</th><th>{{ t("quantity") }}</th>
+              <th>{{ t("price") }}</th><th>{{ t("total") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in quotation.items ?? []" :key="item.id">
+              <td>{{ item.productName }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>{{ item.unitPrice.toLocaleString() }}</td>
+              <td>{{ item.lineTotal.toLocaleString() }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mb-4 text-slate-800 font-semibold">{{ t("subtotal") }}: {{ quotation.subtotal.toLocaleString() }}</p>
 
-      <button
-        v-if="quotation.status === 'OPEN' && auth.hasPermission('quotations.manage')"
-        type="button"
-        :disabled="busy"
-        @click="doConvert"
-      >
-        {{ t("convert") }}
-      </button>
-      <RouterLink
-        v-else-if="quotation.convertedSaleId"
-        :to="`/sales/${quotation.convertedSaleId}`"
-      >
-        {{ t("receipt") }}
-      </RouterLink>
-      <RouterLink to="/quotations">{{ t("cancel") }}</RouterLink>
+      <div class="flex flex-wrap items-center gap-3">
+        <button
+          v-if="quotation.status === 'OPEN' && auth.hasPermission('quotations.manage')"
+          type="button"
+          :disabled="busy"
+          class="btn-primary"
+          @click="doConvert"
+        >
+          {{ t("convert") }}
+        </button>
+        <RouterLink
+          v-else-if="quotation.convertedSaleId"
+          :to="`/sales/${quotation.convertedSaleId}`"
+          class="btn-secondary"
+        >
+          {{ t("receipt") }}
+        </RouterLink>
+        <RouterLink to="/quotations" class="btn-secondary">{{ t("cancel") }}</RouterLink>
+      </div>
     </template>
-  </section>
+  </div>
 </template>

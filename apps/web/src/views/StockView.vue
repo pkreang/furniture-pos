@@ -59,47 +59,59 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section>
-    <h2>{{ t("stock") }}</h2>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("stock") }}</h1>
 
-    <form v-if="canAdjust" @submit.prevent="submitAdjust">
-      <h3>{{ t("adjust") }}</h3>
-      <label>{{ t("products") }}
-        <select v-model.number="form.productId">
-          <option v-for="p in products" :key="p.id" :value="p.id">{{ p.sku }} — {{ p.name }}</option>
-        </select>
-      </label>
-      <label>{{ t("branches") }}
-        <select v-model.number="form.branchId">
-          <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
-        </select>
-      </label>
-      <label>{{ t("quantity") }} (+/-)
-        <input v-model.number="form.delta" type="number" />
-      </label>
-      <label>หมายเหตุ<input v-model="form.note" /></label>
-      <button type="submit">{{ t("save") }}</button>
-    </form>
+    <div v-if="canAdjust" class="card mb-4">
+      <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("adjust") }}</h2>
+      <form @submit.prevent="submitAdjust">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="form-row">
+            <label>{{ t("products") }}</label>
+            <select v-model.number="form.productId" class="input">
+              <option v-for="p in products" :key="p.id" :value="p.id">{{ p.sku }} — {{ p.name }}</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>{{ t("branches") }}</label>
+            <select v-model.number="form.branchId" class="input">
+              <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>{{ t("quantity") }} (+/-)</label>
+            <input v-model.number="form.delta" type="number" class="input" />
+          </div>
+          <div class="form-row">
+            <label>หมายเหตุ</label>
+            <input v-model="form.note" class="input" />
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">{{ t("save") }}</button>
+      </form>
+    </div>
 
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="loading">…</p>
-    <table v-else>
-      <thead>
-        <tr>
-          <th>{{ t("sku") }}</th>
-          <th>{{ t("products") }}</th>
-          <th>{{ t("branches") }}</th>
-          <th>{{ t("quantity") }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="l in levels" :key="`${l.productId}-${l.branchId}`">
-          <td>{{ l.product.sku }}</td>
-          <td>{{ l.product.name }}</td>
-          <td>{{ l.branch.name }}</td>
-          <td>{{ l.quantity }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+    <p v-if="error" class="text-red-600 mb-3">{{ error }}</p>
+    <p v-if="loading" class="text-slate-500">…</p>
+    <div v-else class="card overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ t("sku") }}</th>
+            <th>{{ t("products") }}</th>
+            <th>{{ t("branches") }}</th>
+            <th>{{ t("quantity") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="l in levels" :key="`${l.productId}-${l.branchId}`">
+            <td class="font-mono text-xs text-slate-600">{{ l.product.sku }}</td>
+            <td>{{ l.product.name }}</td>
+            <td>{{ l.branch.name }}</td>
+            <td>{{ l.quantity }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>

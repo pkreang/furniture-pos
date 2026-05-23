@@ -30,13 +30,21 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <section class="change-password">
-    <h2>{{ t("changePassword") }}</h2>
-    <form @submit.prevent="submit">
-      <label>{{ t("currentPassword") }}<input v-model="currentPassword" type="password" /></label>
-      <label>{{ t("newPassword") }}<input v-model="newPassword" type="password" minlength="8" /></label>
-      <p v-if="error" class="error">{{ error }}</p>
-      <button type="submit" :disabled="busy">{{ t("save") }}</button>
-    </form>
-  </section>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("changePassword") }}</h1>
+    <div class="card max-w-md">
+      <form @submit.prevent="submit">
+        <div class="form-row">
+          <label>{{ t("currentPassword") }}</label>
+          <input v-model="currentPassword" type="password" class="input" />
+        </div>
+        <div class="form-row">
+          <label>{{ t("newPassword") }}</label>
+          <input v-model="newPassword" type="password" minlength="8" class="input" />
+        </div>
+        <p v-if="error" class="text-red-600 text-sm mb-3">{{ error }}</p>
+        <button type="submit" :disabled="busy" class="btn-primary">{{ t("save") }}</button>
+      </form>
+    </div>
+  </div>
 </template>

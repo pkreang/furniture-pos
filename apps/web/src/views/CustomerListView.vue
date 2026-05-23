@@ -28,36 +28,41 @@ onMounted(load);
 </script>
 
 <template>
-  <section>
-    <header>
-      <h2>{{ t("customers") }}</h2>
-      <RouterLink v-if="auth.hasPermission('customers.manage')" to="/customers/new">
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <header class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-bold text-slate-900">{{ t("customers") }}</h1>
+      <RouterLink v-if="auth.hasPermission('customers.manage')" to="/customers/new" class="btn-primary">
         + {{ t("customer") }}
       </RouterLink>
     </header>
-    <form @submit.prevent="load">
-      <input v-model="query" :placeholder="t('search')" />
-      <button type="submit">{{ t("search") }}</button>
+    <form class="card mb-4 flex flex-wrap items-end gap-3" @submit.prevent="load">
+      <div class="form-row flex-1 mb-0 min-w-[200px]">
+        <label>{{ t("search") }}</label>
+        <input v-model="query" :placeholder="t('search')" class="input" />
+      </div>
+      <button type="submit" class="btn-secondary">{{ t("search") }}</button>
     </form>
-    <p v-if="loading">…</p>
-    <p v-else-if="error" class="error">{{ error }}</p>
-    <table v-else>
-      <thead>
-        <tr>
-          <th>{{ t("customer") }}</th>
-          <th>{{ t("phone") }}</th>
-          <th>{{ t("tier") }}</th>
-          <th>{{ t("points") }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="c in customers" :key="c.id">
-          <td><RouterLink :to="`/customers/${c.id}`">{{ c.name }}</RouterLink></td>
-          <td>{{ c.phone }}</td>
-          <td>{{ c.tier.name }}</td>
-          <td>{{ c.pointsBalance }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+    <p v-if="loading" class="text-slate-500">…</p>
+    <p v-else-if="error" class="text-red-600">{{ error }}</p>
+    <div v-else class="card overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ t("customer") }}</th>
+            <th>{{ t("phone") }}</th>
+            <th>{{ t("tier") }}</th>
+            <th>{{ t("points") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="c in customers" :key="c.id">
+            <td><RouterLink :to="`/customers/${c.id}`" class="text-indigo-600 hover:text-indigo-700 font-medium">{{ c.name }}</RouterLink></td>
+            <td>{{ c.phone }}</td>
+            <td>{{ c.tier.name }}</td>
+            <td>{{ c.pointsBalance }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>

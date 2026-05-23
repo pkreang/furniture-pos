@@ -25,40 +25,27 @@ onMounted(load);
 </script>
 
 <template>
-  <section>
-    <h2>{{ t("dashboard") }}</h2>
-    <p v-if="error" class="error">{{ error }}</p>
-    <div v-else-if="data" class="cards">
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("dashboard") }}</h1>
+    <p v-if="error" class="text-red-600 mb-4">{{ error }}</p>
+    <div v-else-if="data" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="card">
-        <h3>{{ t("today") }} — {{ t("sales") }}</h3>
-        <p>{{ data.todaySalesCount }} บิล</p>
-        <p>{{ data.todaySalesTotal.toLocaleString() }} บาท</p>
+        <h3 class="text-sm font-semibold text-slate-500 mb-2">{{ t("today") }} — {{ t("sales") }}</h3>
+        <p class="text-2xl font-bold text-slate-900">{{ data.todaySalesCount }} <span class="text-base font-normal text-slate-500">บิล</span></p>
+        <p class="text-sm text-slate-600 mt-1">{{ data.todaySalesTotal.toLocaleString() }} บาท</p>
       </div>
       <div class="card">
-        <h3>{{ t("outstanding") }}</h3>
-        <p>{{ data.outstandingTotal.toLocaleString() }} บาท</p>
+        <h3 class="text-sm font-semibold text-slate-500 mb-2">{{ t("outstanding") }}</h3>
+        <p class="text-2xl font-bold text-slate-900">{{ data.outstandingTotal.toLocaleString() }} <span class="text-base font-normal text-slate-500">บาท</span></p>
       </div>
       <div class="card">
-        <h3>{{ t("pendingDeliveries") }}</h3>
-        <p>{{ data.pendingDeliveries }}</p>
+        <h3 class="text-sm font-semibold text-slate-500 mb-2">{{ t("pendingDeliveries") }}</h3>
+        <p class="text-2xl font-bold text-slate-900">{{ data.pendingDeliveries }}</p>
       </div>
       <div class="card">
-        <h3>{{ t("lowStock") }}</h3>
-        <p>{{ data.lowStockCount }}</p>
+        <h3 class="text-sm font-semibold text-slate-500 mb-2">{{ t("lowStock") }}</h3>
+        <p class="text-2xl font-bold text-slate-900">{{ data.lowStockCount }}</p>
       </div>
     </div>
-  </section>
+  </div>
 </template>
-
-<style scoped>
-.cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-.card {
-  border: 1px solid #ccc;
-  padding: 1rem;
-  min-width: 160px;
-}
-</style>

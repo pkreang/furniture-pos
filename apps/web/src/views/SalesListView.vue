@@ -21,27 +21,29 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section>
-    <h2>{{ t("sales") }}</h2>
-    <p v-if="loading">…</p>
-    <p v-else-if="error" class="error">{{ error }}</p>
-    <table v-else>
-      <thead>
-        <tr>
-          <th>{{ t("receipt") }}</th>
-          <th>{{ t("branches") }}</th>
-          <th>{{ t("customer") }}</th>
-          <th>{{ t("total") }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="s in sales" :key="s.id">
-          <td><RouterLink :to="`/sales/${s.id}`">{{ s.number }}</RouterLink></td>
-          <td>{{ s.branch?.name }}</td>
-          <td>{{ s.customer?.name ?? "—" }}</td>
-          <td>{{ s.total.toLocaleString() }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("sales") }}</h1>
+    <p v-if="loading" class="text-slate-500">…</p>
+    <p v-else-if="error" class="text-red-600">{{ error }}</p>
+    <div v-else class="card overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ t("receipt") }}</th>
+            <th>{{ t("branches") }}</th>
+            <th>{{ t("customer") }}</th>
+            <th>{{ t("total") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="s in sales" :key="s.id">
+            <td><RouterLink :to="`/sales/${s.id}`" class="text-indigo-600 hover:text-indigo-700 font-medium">{{ s.number }}</RouterLink></td>
+            <td>{{ s.branch?.name }}</td>
+            <td>{{ s.customer?.name ?? "—" }}</td>
+            <td>{{ s.total.toLocaleString() }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>

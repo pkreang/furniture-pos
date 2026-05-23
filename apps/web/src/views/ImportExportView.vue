@@ -40,39 +40,42 @@ async function doImport(entity: ImportEntity, event: Event): Promise<void> {
 </script>
 
 <template>
-  <section>
-    <h2>{{ t("importExport") }}</h2>
-    <p v-if="error" class="error">{{ error }}</p>
+  <div class="p-6 max-w-screen-xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-slate-900">{{ t("importExport") }}</h1>
+    <p v-if="error" class="text-red-600 mb-4">{{ error }}</p>
 
-    <table>
-      <thead>
-        <tr><th></th><th>{{ t("exportData") }}</th><th>{{ t("importData") }}</th></tr>
-      </thead>
-      <tbody>
-        <tr v-for="entity in entities" :key="entity">
-          <td>{{ entity }}</td>
-          <td>
-            <button type="button" @click="doExport(entity)">{{ t("exportData") }} .xlsx</button>
-          </td>
-          <td>
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              @change="(e) => doImport(entity, e)"
-            />
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="card overflow-x-auto mb-4">
+      <table class="data-table">
+        <thead>
+          <tr><th></th><th>{{ t("exportData") }}</th><th>{{ t("importData") }}</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="entity in entities" :key="entity">
+            <td class="font-medium text-slate-800">{{ entity }}</td>
+            <td>
+              <button type="button" class="btn-secondary" @click="doExport(entity)">{{ t("exportData") }} .xlsx</button>
+            </td>
+            <td>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                class="text-sm"
+                @change="(e) => doImport(entity, e)"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-    <div v-if="result">
-      <h3>{{ t("result") }} — {{ result.entity }}</h3>
-      <p>{{ t("importData") }}: {{ result.data.created }}</p>
-      <ul>
-        <li v-for="err in result.data.errors" :key="err.row" class="error">
+    <div v-if="result" class="card">
+      <h2 class="text-lg font-semibold mb-3 text-slate-800">{{ t("result") }} — {{ result.entity }}</h2>
+      <p class="text-sm text-slate-700 mb-2">{{ t("importData") }}: {{ result.data.created }}</p>
+      <ul class="space-y-1">
+        <li v-for="err in result.data.errors" :key="err.row" class="text-sm text-red-600">
           แถว {{ err.row }}: {{ err.message }}
         </li>
       </ul>
     </div>
-  </section>
+  </div>
 </template>
