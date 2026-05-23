@@ -76,6 +76,13 @@ async function doLogout(): Promise<void> {
               active-class="bg-indigo-600 text-white"
               >{{ t("quotations") }}</RouterLink
             >
+            <RouterLink
+              v-if="auth.hasPermission('so.view')"
+              to="/sales-orders"
+              class="block px-3 py-2 rounded text-sm hover:bg-slate-700 hover:text-white"
+              active-class="bg-indigo-600 text-white"
+              >{{ t("salesOrders") }}</RouterLink
+            >
           </div>
         </div>
         <div>

@@ -26,6 +26,7 @@ model Branch {
   deliveryTeams   DeliveryTeam[]
   zReports        ZReport[]
   purchaseOrders  PurchaseOrder[]
+  salesOrders     SalesOrder[]
 
   @@map("branches")
 }
@@ -90,6 +91,7 @@ model User {
   zReportsGenerated     ZReport[]
   auditLogs             AuditLog[]
   purchaseOrders        PurchaseOrder[]
+  salesOrders           SalesOrder[]
 
   @@map("users")
 }
@@ -102,6 +104,9 @@ enum StockMovementReason {
   SALE
   REFUND
   PO_RECEIVE
+  SO_RESERVE
+  SO_RELEASE
+  SO_DELIVERY
 }
 
 model Category {
@@ -131,6 +136,7 @@ model Product {
   saleItems      SaleItem[]
   quotationItems QuotationItem[]
   poItems        PurchaseOrderItem[]
+  soItems        SalesOrderItem[]
 
   @@map("products")
 }
@@ -157,9 +163,10 @@ model SofaColor {
 }
 
 model StockLevel {
-  productId Int @map("product_id")
-  branchId  Int @map("branch_id")
-  quantity  Int @default(0)
+  productId   Int @map("product_id")
+  branchId    Int @map("branch_id")
+  quantity    Int @default(0)
+  reservedQty Int @default(0) @map("reserved_qty")
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   branch  Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
@@ -179,6 +186,7 @@ model StockMovement {
   transferId      Int?                @map("transfer_id")
   saleId          Int?                @map("sale_id")
   purchaseOrderId Int?                @map("purchase_order_id")
+  salesOrderId    Int?                @map("sales_order_id")
   createdAt       DateTime            @default(now()) @map("created_at")
 
   product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -187,6 +195,7 @@ model StockMovement {
   transfer      Transfer?      @relation(fields: [transferId], references: [id])
   sale          Sale?          @relation(fields: [saleId], references: [id])
   purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+  salesOrder    SalesOrder?    @relation(fields: [salesOrderId], references: [id], onDelete: SetNull)
 
   @@map("stock_movements")
 }
@@ -232,6 +241,7 @@ model Customer {
   pointTransactions PointTransaction[]
   sales             Sale[]
   quotations        Quotation[]
+  salesOrders       SalesOrder[]
 
   @@map("customers")
 }
@@ -306,6 +316,65 @@ model PoSequence {
   next Int @default(1)
 
   @@map("po_sequences")
+}
+
+enum SalesOrderStatus {
+  DRAFT
+  CONFIRMED
+  DELIVERED
+  CANCELLED
+}
+
+model SalesOrder {
+  id            Int              @id @default(autoincrement())
+  code          String           @unique
+  customerId    Int?             @map("customer_id")
+  branchId      Int              @map("branch_id")
+  status        SalesOrderStatus @default(DRAFT)
+  orderDate     DateTime         @default(now()) @map("order_date")
+  dueDate       DateTime?        @map("due_date")
+  deliveredDate DateTime?        @map("delivered_date")
+  subtotal      Int              @default(0)
+  discount      Int              @default(0)
+  vatAmount     Int              @default(0) @map("vat_amount")
+  totalAmount   Int              @default(0) @map("total_amount")
+  deposit       Int              @default(0)
+  notes         String?
+  quotationId   Int?             @map("quotation_id")
+  poRef         String?          @map("po_ref")
+  createdById   Int              @map("created_by_id")
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  customer  Customer?        @relation(fields: [customerId], references: [id])
+  branch    Branch           @relation(fields: [branchId], references: [id])
+  quotation Quotation?       @relation(fields: [quotationId], references: [id])
+  createdBy User             @relation(fields: [createdById], references: [id])
+  items     SalesOrderItem[]
+  movements StockMovement[]
+
+  @@map("sales_orders")
+}
+
+model SalesOrderItem {
+  id           Int @id @default(autoincrement())
+  salesOrderId Int @map("sales_order_id")
+  productId    Int @map("product_id")
+  quantity     Int
+  unitPrice    Int @map("unit_price")
+  discount     Int @default(0)
+  lineTotal    Int @map("line_total")
+
+  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  product    Product    @relation(fields: [productId], references: [id])
+
+  @@map("sales_order_items")
+}
+
+model SoSequence {
+  year Int @id
+  next Int @default(1)
+
+  @@map("so_sequences")
 }
 
 model PointTransaction {
@@ -410,6 +479,7 @@ model Quotation {
   createdBy     User            @relation(fields: [createdById], references: [id])
   convertedSale Sale?           @relation(fields: [convertedSaleId], references: [id])
   items         QuotationItem[]
+  salesOrders   SalesOrder[]
 
   @@map("quotations")
 }

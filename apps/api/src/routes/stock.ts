@@ -20,7 +20,7 @@ export async function stockRoutes(app: FastifyInstance): Promise<void> {
       const scoped = branchFilter(request.user!);
       const { branchId } = request.query as { branchId?: number };
       const where = scoped.branchId !== undefined ? scoped : branchId !== undefined ? { branchId } : {};
-      return prisma.stockLevel.findMany({
+      const levels = await prisma.stockLevel.findMany({
         where,
         include: {
           product: { select: { sku: true, name: true } },
@@ -28,6 +28,15 @@ export async function stockRoutes(app: FastifyInstance): Promise<void> {
         },
         orderBy: [{ branchId: "asc" }, { productId: "asc" }],
       });
+      return levels.map((l) => ({
+        productId: l.productId,
+        branchId: l.branchId,
+        quantity: l.quantity,
+        reservedQty: l.reservedQty,
+        available: l.quantity - l.reservedQty,
+        product: l.product,
+        branch: l.branch,
+      }));
     },
   );
 

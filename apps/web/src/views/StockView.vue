@@ -100,7 +100,9 @@ onMounted(async () => {
             <th>{{ t("sku") }}</th>
             <th>{{ t("products") }}</th>
             <th>{{ t("branches") }}</th>
-            <th>{{ t("quantity") }}</th>
+            <th class="text-right">{{ t("quantity") }}</th>
+            <th class="text-right">{{ t("reserved") }}</th>
+            <th class="text-right">{{ t("available") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -108,7 +110,14 @@ onMounted(async () => {
             <td class="font-mono text-xs text-slate-600 dark:text-slate-300">{{ l.product.sku }}</td>
             <td>{{ l.product.name }}</td>
             <td>{{ l.branch.name }}</td>
-            <td>{{ l.quantity }}</td>
+            <td class="text-right">{{ l.quantity }}</td>
+            <td class="text-right">{{ l.reservedQty }}</td>
+            <td
+              class="text-right"
+              :class="l.available <= 0 ? 'text-amber-600 dark:text-amber-400 font-medium' : ''"
+            >
+              {{ l.available }}
+            </td>
           </tr>
         </tbody>
       </table>
