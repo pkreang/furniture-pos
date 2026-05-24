@@ -1,4 +1,5 @@
 import { apiGet, apiSend } from "./client";
+import type { BillingType } from "./sales-orders";
 
 export interface Tier {
   key: string;
@@ -18,10 +19,21 @@ export interface Customer {
   id: number;
   name: string;
   phone: string;
+  phone2: string | null;
   email: string | null;
   taxId: string | null;
   taxName: string | null;
   taxAddress: string | null;
+  billingType: BillingType | null;
+  billingBranchNo: string | null;
+  addrLine1: string | null;
+  addrMoo: string | null;
+  addrSoi: string | null;
+  addrStreet: string | null;
+  addrKwang: string | null;
+  addrDistrict: string | null;
+  addrProvince: string | null;
+  addrPostal: string | null;
   pointsBalance: number;
   lifetimeSpend: number;
   tier: Tier;
@@ -31,10 +43,21 @@ export interface Customer {
 export interface CustomerInput {
   name: string;
   phone: string;
+  phone2?: string;
   email?: string;
   taxId?: string;
   taxName?: string;
   taxAddress?: string;
+  billingType?: BillingType;
+  billingBranchNo?: string;
+  addrLine1?: string;
+  addrMoo?: string;
+  addrSoi?: string;
+  addrStreet?: string;
+  addrKwang?: string;
+  addrDistrict?: string;
+  addrProvince?: string;
+  addrPostal?: string;
 }
 
 export function fetchCustomers(q?: string): Promise<Customer[]> {

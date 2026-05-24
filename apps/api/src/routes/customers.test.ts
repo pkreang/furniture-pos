@@ -90,6 +90,74 @@ describe("customers routes", () => {
     expect(res.json().code).toBe("DUPLICATE");
   });
 
+  it("creates and reads back structured address + billing fields", async () => {
+    const adminId = await createTestUser({ username: "admin", permissions: ["customers.view", "customers.manage"] });
+    const app = buildApp();
+    const cookies = await sessionCookie(adminId);
+    const create = await app.inject({
+      method: "POST",
+      url: "/api/customers",
+      cookies,
+      payload: {
+        name: "ลูกค้าครบ",
+        phone: "0870000001",
+        phone2: "0870000002",
+        billingType: "BRANCH",
+        billingBranchNo: "00001",
+        addrLine1: "999/1",
+        addrMoo: "4",
+        addrSoi: "ลาดพร้าว 1",
+        addrStreet: "ลาดพร้าว",
+        addrKwang: "จอมพล",
+        addrDistrict: "จตุจักร",
+        addrProvince: "กรุงเทพมหานคร",
+        addrPostal: "10900",
+      },
+    });
+    expect(create.statusCode).toBe(201);
+
+    const read = await app.inject({
+      method: "GET",
+      url: `/api/customers/${create.json().id}`,
+      cookies,
+    });
+    await app.close();
+    const body = read.json();
+    expect(body.phone2).toBe("0870000002");
+    expect(body.billingType).toBe("BRANCH");
+    expect(body.billingBranchNo).toBe("00001");
+    expect(body.addrLine1).toBe("999/1");
+    expect(body.addrMoo).toBe("4");
+    expect(body.addrKwang).toBe("จอมพล");
+    expect(body.addrProvince).toBe("กรุงเทพมหานคร");
+    expect(body.addrPostal).toBe("10900");
+  });
+
+  it("patches a subset of address fields without disturbing others", async () => {
+    const customer = await prisma.customer.create({
+      data: {
+        name: "เดิม",
+        phone: "0871111111",
+        addrLine1: "เดิม 1",
+        addrProvince: "กรุงเทพมหานคร",
+        addrPostal: "10100",
+      },
+    });
+    const adminId = await createTestUser({ username: "admin", permissions: ["customers.manage"] });
+    const app = buildApp();
+    const res = await app.inject({
+      method: "PATCH",
+      url: `/api/customers/${customer.id}`,
+      cookies: await sessionCookie(adminId),
+      payload: { addrPostal: "10200" },
+    });
+    await app.close();
+    expect(res.statusCode).toBe(200);
+    expect(res.json().addrPostal).toBe("10200");
+    expect(res.json().addrLine1).toBe("เดิม 1");
+    expect(res.json().addrProvince).toBe("กรุงเทพมหานคร");
+  });
+
   it("updates a customer's tax fields with customers.manage", async () => {
     const customer = await prisma.customer.create({ data: { name: "บริษัท", phone: "0820000000" } });
     const adminId = await createTestUser({ username: "admin", permissions: ["customers.manage"] });

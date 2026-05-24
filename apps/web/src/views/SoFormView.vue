@@ -129,12 +129,23 @@ function visibleBranches(): Branch[] {
 }
 
 // Prefill phone2/address overrides when the user picks a customer (only fill
-// empty fields — never overwrite values the cashier already typed).
+// empty fields — never overwrite values the cashier already typed). Falls back
+// to legacy free-text taxAddress for customers that pre-date structured fields.
 watch(customerId, (id) => {
   if (typeof id !== "number" || id <= 0) return;
   const c = customers.value.find((cc) => cc.id === id);
   if (!c) return;
-  if (!addrLine1.value && c.taxAddress) addrLine1.value = c.taxAddress;
+  if (!customerPhone2.value && c.phone2) customerPhone2.value = c.phone2;
+  if (!billingType.value && c.billingType) billingType.value = c.billingType;
+  if (!billingBranchNo.value && c.billingBranchNo) billingBranchNo.value = c.billingBranchNo;
+  if (!addrLine1.value) addrLine1.value = c.addrLine1 || c.taxAddress || "";
+  if (!addrMoo.value && c.addrMoo) addrMoo.value = c.addrMoo;
+  if (!addrSoi.value && c.addrSoi) addrSoi.value = c.addrSoi;
+  if (!addrStreet.value && c.addrStreet) addrStreet.value = c.addrStreet;
+  if (!addrKwang.value && c.addrKwang) addrKwang.value = c.addrKwang;
+  if (!addrDistrict.value && c.addrDistrict) addrDistrict.value = c.addrDistrict;
+  if (!addrProvince.value && c.addrProvince) addrProvince.value = c.addrProvince;
+  if (!addrPostal.value && c.addrPostal) addrPostal.value = c.addrPostal;
 });
 
 async function submit(): Promise<void> {
