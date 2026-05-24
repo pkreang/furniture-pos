@@ -198,4 +198,5 @@ export default {
   salesSignature: "Sales person",
   additionalInfo: "More Information",
   salesperson: "Salesperson",
+  resetPassword: "Reset password",
 };

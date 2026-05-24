@@ -29,3 +29,7 @@ export function createUser(input: NewUser): Promise<User> {
 export function updateUser(id: number, patch: Partial<Omit<User, "id" | "username">>): Promise<User> {
   return apiSend<User>("PATCH", `/api/users/${id}`, patch);
 }
+
+export function resetUserPassword(id: number, newPassword: string): Promise<{ ok: boolean }> {
+  return apiSend<{ ok: boolean }>("POST", `/api/users/${id}/reset-password`, { newPassword });
+}

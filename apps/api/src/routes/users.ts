@@ -93,4 +93,41 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
       });
     },
   );
+
+  // Admin-driven password reset: an operator with users.manage sets a
+  // temporary password for another user, who is then forced to change it on
+  // first login (mustChangePassword=true). Users changing their OWN password
+  // should still go through /api/auth/change-password which requires the
+  // current password.
+  app.post(
+    "/api/users/:id/reset-password",
+    {
+      preHandler: [app.authenticate, app.requirePermission("users.manage")],
+      schema: {
+        body: {
+          type: "object",
+          required: ["newPassword"],
+          properties: {
+            newPassword: { type: "string", minLength: 8 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const id = Number((request.params as { id: string }).id);
+      const { newPassword } = request.body as { newPassword: string };
+      const target = await prisma.user.findUnique({ where: { id } });
+      if (!target) {
+        return reply.code(404).send({ code: "NOT_FOUND", message: "ไม่พบผู้ใช้" });
+      }
+      await prisma.user.update({
+        where: { id },
+        data: {
+          passwordHash: await hashPassword(newPassword),
+          mustChangePassword: true,
+        },
+      });
+      return { ok: true };
+    },
+  );
 }

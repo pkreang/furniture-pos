@@ -2,19 +2,24 @@ import { buildApp } from "./app.js";
 import { prisma } from "./prisma.js";
 import { loadConfig } from "./config.js";
 import { startDailyReportSchedule } from "./reports/schedule.js";
+import { runBootstrapResets } from "./auth/bootstrap-reset.js";
 
 const config = loadConfig();
 const app = buildApp();
 
-app
-  .listen({ port: config.port, host: "0.0.0.0" })
-  .then((address) => {
-    console.log(`API listening on ${address}`);
-    startDailyReportSchedule(prisma);
-  })
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
+runBootstrapResets(prisma)
+  .catch((err) => console.error("[bootstrap] reset failed:", err))
+  .finally(() => {
+    app
+      .listen({ port: config.port, host: "0.0.0.0" })
+      .then((address) => {
+        console.log(`API listening on ${address}`);
+        startDailyReportSchedule(prisma);
+      })
+      .catch((err) => {
+        console.error(err);
+        process.exit(1);
+      });
   });
 
 /** Closes Fastify and Prisma cleanly so the container stops without dropping work. */
