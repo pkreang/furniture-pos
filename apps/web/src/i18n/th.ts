@@ -198,4 +198,5 @@ export default {
   salesSignature: "พนักงานขาย / Sales person",
   additionalInfo: "ข้อมูลเพิ่มเติม / More Information",
   salesperson: "พนักงานขาย",
+  resetPassword: "ตั้งรหัสผ่านใหม่",
 };
