@@ -23,11 +23,14 @@ export async function apiSend<T>(
   path: string,
   body?: unknown,
 ): Promise<T> {
-  const res = await fetch(path, {
-    method,
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  return parse<T>(res, path);
+  // Only attach Content-Type when we actually have a JSON body — Fastify's
+  // body parser rejects empty bodies with status 400 if Content-Type is set
+  // to application/json. This bit endpoints like /auth/logout and the SO
+  // status-transition POSTs that intentionally have no body.
+  const init: RequestInit = { method, credentials: "include" };
+  if (body !== undefined) {
+    init.headers = { "Content-Type": "application/json" };
+    init.body = JSON.stringify(body);
+  }
+  return parse<T>(await fetch(path, init), path);
 }
