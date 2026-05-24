@@ -23,13 +23,15 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function logout(): Promise<void> {
-    // Clear local state immediately so the UI reacts before any network
-    // round-trip — Render's free tier may take ~30s to wake from sleep,
-    // and the user pressing "log out" should not be held hostage to it.
     user.value = null;
-    // Server-side session cleanup is best-effort; the cookie still works
-    // its way to expiry via maxAge, and re-login replaces it cleanly.
-    authApi.logout().catch(() => {});
+    try {
+      await authApi.logout();
+    } catch {
+      // Best-effort: local state is already cleared and the user sees themselves
+      // logged out. If the server call failed (network blip / cold start
+      // timeout) the session row in the DB and the cookie remain until they
+      // expire on their own — a tab refresh could pick them back up.
+    }
   }
 
   function hasPermission(key: string): boolean {

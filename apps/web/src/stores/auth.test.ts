@@ -58,19 +58,25 @@ describe("auth store", () => {
     expect(store.user).toBeNull();
   });
 
-  it("clears the user immediately without waiting for the logout API", async () => {
+  it("awaits the server logout before resolving so the cookie is gone", async () => {
     let resolveFetch!: (value: unknown) => void;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => new Promise((resolve) => { resolveFetch = resolve; })),
+    const fetchMock = vi.fn(
+      () => new Promise((resolve) => { resolveFetch = resolve; }),
     );
+    vi.stubGlobal("fetch", fetchMock);
     const store = useAuthStore();
     store.user = {
       id: 1, username: "a", name: "A", roleKey: "admin", branchId: null,
       isBranchScoped: false, discountMaxPercent: null, permissions: [], mustChangePassword: false,
     };
-    await store.logout();
-    expect(store.user).toBeNull(); // already cleared before fetch resolves
+    const logoutPromise = store.logout();
+    expect(store.user).toBeNull(); // local state clears synchronously for UX
+    expect(fetchMock).toHaveBeenCalledTimes(1); // and the API call is in flight
+    let settled = false;
+    logoutPromise.then(() => { settled = true; });
+    await Promise.resolve();
+    expect(settled).toBe(false); // but we have NOT resolved until the server responds
     resolveFetch({ ok: true, json: async () => ({ ok: true }) });
+    await logoutPromise;
   });
 });
