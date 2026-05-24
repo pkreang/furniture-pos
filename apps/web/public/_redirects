@@ -1,0 +1,7 @@
+# API requests proxy server-side to the Render API service. This keeps the
+# browser seeing a single origin, so no CORS / cross-site cookie work is needed.
+/api/*  https://elite-rzpk.onrender.com/api/:splat  200
+
+# SPA fallback: any non-API request that doesn't match a built asset returns
+# the index so vue-router can handle it client-side.
+/*      /index.html                                  200
