@@ -227,16 +227,27 @@ enum PointTransactionReason {
 }
 
 model Customer {
-  id            Int      @id @default(autoincrement())
-  name          String
-  phone         String   @unique
-  email         String?
-  taxId         String?  @map("tax_id")
-  taxName       String?  @map("tax_name")
-  taxAddress    String?  @map("tax_address")
-  pointsBalance Int      @default(0) @map("points_balance")
-  lifetimeSpend Int      @default(0) @map("lifetime_spend")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id              Int          @id @default(autoincrement())
+  name            String
+  phone           String       @unique
+  phone2          String?
+  email           String?
+  taxId           String?      @map("tax_id")
+  taxName         String?      @map("tax_name")
+  taxAddress      String?      @map("tax_address")
+  billingType     BillingType? @map("billing_type")
+  billingBranchNo String?      @map("billing_branch_no")
+  addrLine1       String?      @map("addr_line1")
+  addrMoo         String?      @map("addr_moo")
+  addrSoi         String?      @map("addr_soi")
+  addrStreet      String?      @map("addr_street")
+  addrKwang       String?      @map("addr_kwang")
+  addrDistrict    String?      @map("addr_district")
+  addrProvince    String?      @map("addr_province")
+  addrPostal      String?      @map("addr_postal")
+  pointsBalance   Int          @default(0) @map("points_balance")
+  lifetimeSpend   Int          @default(0) @map("lifetime_spend")
+  createdAt       DateTime     @default(now()) @map("created_at")
 
   pointTransactions PointTransaction[]
   sales             Sale[]

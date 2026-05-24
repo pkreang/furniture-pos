@@ -8,6 +8,20 @@ function isUniqueViolation(err: unknown): boolean {
   return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
 }
 
+const billingFieldProps = {
+  phone2: { type: "string" },
+  billingType: { type: "string", enum: ["HEAD_OFFICE", "BRANCH"] },
+  billingBranchNo: { type: "string" },
+  addrLine1: { type: "string" },
+  addrMoo: { type: "string" },
+  addrSoi: { type: "string" },
+  addrStreet: { type: "string" },
+  addrKwang: { type: "string" },
+  addrDistrict: { type: "string" },
+  addrProvince: { type: "string" },
+  addrPostal: { type: "string" },
+};
+
 export async function customerRoutes(app: FastifyInstance): Promise<void> {
   app.get(
     "/api/customers",
@@ -62,6 +76,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
             taxId: { type: "string" },
             taxName: { type: "string" },
             taxAddress: { type: "string" },
+            ...billingFieldProps,
           },
         },
       },
@@ -94,6 +109,7 @@ export async function customerRoutes(app: FastifyInstance): Promise<void> {
             taxId: { type: "string" },
             taxName: { type: "string" },
             taxAddress: { type: "string" },
+            ...billingFieldProps,
           },
         },
       },
