@@ -28,52 +28,48 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <div class="min-h-screen flex">
-    <aside class="hidden lg:flex lg:flex-1 relative overflow-hidden bg-stone-950">
-      <div
-        class="absolute inset-0 bg-cover bg-center"
-        style="background-image: url('/login-hero.jpg')"
-      ></div>
-      <div
-        class="absolute inset-0 bg-gradient-to-b from-stone-950/55 via-transparent to-stone-950/80"
-      ></div>
-      <div
-        class="absolute inset-6 xl:inset-10 border border-amber-200/15 rounded-sm pointer-events-none"
-      ></div>
-      <div class="relative flex flex-col justify-between p-12 xl:p-16 text-white w-full">
-        <div>
-          <p class="text-[11px] tracking-[0.4em] uppercase text-amber-200/80">
-            {{ t("appName") }}
-          </p>
-          <h2 class="font-serif text-5xl xl:text-6xl mt-3 leading-tight">Elite Design</h2>
-        </div>
-        <div class="max-w-md">
-          <p class="font-serif italic text-2xl xl:text-3xl leading-snug text-stone-100">
-            ทุกชิ้นงาน คือความใส่ใจ
-          </p>
-          <p class="mt-5 text-sm text-stone-300/80 leading-relaxed">
-            ระบบจัดการร้านเฟอร์นิเจอร์ครบวงจร — เปิดบิล สั่งจอง จัดส่ง และรายงาน
-            ในที่เดียว
-          </p>
-        </div>
-        <p class="text-xs tracking-wider text-stone-400/60">
-          © {{ new Date().getFullYear() }} Elite Design Furniture
-        </p>
-      </div>
-    </aside>
+  <div class="min-h-screen relative overflow-hidden bg-stone-950">
+    <div
+      class="absolute inset-0 bg-cover bg-center"
+      style="background-image: url('/login-hero.jpg')"
+    ></div>
+    <div class="absolute inset-0 bg-stone-950/55"></div>
 
-    <main class="flex-1 flex items-center justify-center p-6 lg:p-12 bg-white dark:bg-slate-900">
-      <div class="w-full max-w-sm">
-        <div class="mb-8">
+    <div class="hidden md:block absolute top-8 left-8 lg:top-12 lg:left-12 text-white z-10">
+      <p class="text-[11px] tracking-[0.4em] uppercase text-amber-200/80">
+        {{ t("appName") }}
+      </p>
+      <h2 class="font-serif text-3xl lg:text-4xl mt-2 leading-tight">Elite Design</h2>
+    </div>
+
+    <div
+      class="hidden lg:block absolute bottom-12 left-12 text-white max-w-md z-10"
+    >
+      <p class="font-serif italic text-xl xl:text-2xl leading-snug text-stone-100">
+        ทุกชิ้นงาน คือความใส่ใจ
+      </p>
+      <p class="mt-3 text-sm text-stone-300/85 leading-relaxed">
+        ระบบจัดการร้านเฟอร์นิเจอร์ครบวงจร — เปิดบิล สั่งจอง จัดส่ง และรายงาน ในที่เดียว
+      </p>
+      <p class="mt-6 text-xs tracking-wider text-stone-300/60">
+        © {{ new Date().getFullYear() }} Elite Design Furniture
+      </p>
+    </div>
+
+    <main class="relative min-h-screen flex items-center justify-center p-6">
+      <div
+        class="w-full max-w-sm bg-white/90 dark:bg-slate-900/85 backdrop-blur-md rounded-xl border border-white/40 dark:border-slate-700/50 shadow-2xl p-8"
+      >
+        <div class="mb-6">
           <p
-            class="text-[11px] tracking-[0.4em] uppercase text-amber-700 dark:text-amber-300 lg:hidden"
+            class="text-[11px] tracking-[0.4em] uppercase text-amber-700 dark:text-amber-300 md:hidden"
           >
             {{ t("appName") }}
           </p>
-          <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">
+          <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-2">
             {{ t("login") }}
           </h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
             ลงชื่อเข้าใช้เพื่อเริ่มทำงาน
           </p>
         </div>
