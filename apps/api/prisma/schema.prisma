@@ -325,25 +325,77 @@ enum SalesOrderStatus {
   CANCELLED
 }
 
+enum BillingType {
+  HEAD_OFFICE
+  BRANCH
+}
+
+enum SoDeliveryType {
+  COMPANY
+  SELF_PICKUP
+  OTHER
+}
+
+enum PaymentTerm {
+  DEPOSIT
+  FULL
+  INSTALLMENT
+}
+
+enum PaymentMethodKind {
+  CASH
+  TRANSFER
+  CREDIT_CARD
+}
+
+enum CardType {
+  VISA
+  MASTERCARD
+  OTHER
+}
+
 model SalesOrder {
-  id            Int              @id @default(autoincrement())
-  code          String           @unique
-  customerId    Int?             @map("customer_id")
-  branchId      Int              @map("branch_id")
-  status        SalesOrderStatus @default(DRAFT)
-  orderDate     DateTime         @default(now()) @map("order_date")
-  dueDate       DateTime?        @map("due_date")
-  deliveredDate DateTime?        @map("delivered_date")
-  subtotal      Int              @default(0)
-  discount      Int              @default(0)
-  vatAmount     Int              @default(0) @map("vat_amount")
-  totalAmount   Int              @default(0) @map("total_amount")
-  deposit       Int              @default(0)
-  notes         String?
-  quotationId   Int?             @map("quotation_id")
-  poRef         String?          @map("po_ref")
-  createdById   Int              @map("created_by_id")
-  createdAt     DateTime         @default(now()) @map("created_at")
+  id                 Int              @id @default(autoincrement())
+  code               String           @unique
+  customerId         Int?             @map("customer_id")
+  branchId           Int              @map("branch_id")
+  status             SalesOrderStatus @default(DRAFT)
+  orderDate          DateTime         @default(now()) @map("order_date")
+  dueDate            DateTime?        @map("due_date")
+  deliveredDate      DateTime?        @map("delivered_date")
+  subtotal           Int              @default(0)
+  discount           Int              @default(0)
+  vatAmount          Int              @default(0) @map("vat_amount")
+  totalAmount        Int              @default(0) @map("total_amount")
+  deposit            Int              @default(0)
+  notes              String?
+  quotationId        Int?             @map("quotation_id")
+  poRef              String?          @map("po_ref")
+  createdById        Int              @map("created_by_id")
+  createdAt          DateTime         @default(now()) @map("created_at")
+
+  bookNo             String?            @map("book_no")
+  billingType        BillingType?       @map("billing_type")
+  billingBranchNo    String?            @map("billing_branch_no")
+  customerPhone2     String?            @map("customer_phone2")
+  addrLine1          String?            @map("addr_line1")
+  addrMoo            String?            @map("addr_moo")
+  addrSoi            String?            @map("addr_soi")
+  addrStreet         String?            @map("addr_street")
+  addrKwang          String?            @map("addr_kwang")
+  addrDistrict       String?            @map("addr_district")
+  addrProvince       String?            @map("addr_province")
+  addrPostal         String?            @map("addr_postal")
+  canShipImmediately Boolean            @default(false) @map("can_ship_immediately")
+  deliveryType       SoDeliveryType?    @map("delivery_type")
+  deliveryTypeOther  String?            @map("delivery_type_other")
+  deliveryInfo       Json?              @map("delivery_info")
+  paymentTerm        PaymentTerm?       @map("payment_term")
+  installmentMonths  Int?               @map("installment_months")
+  depositMethod      PaymentMethodKind? @map("deposit_method")
+  depositCardType    CardType?          @map("deposit_card_type")
+  balanceMethod      PaymentMethodKind? @map("balance_method")
+  balanceCardType    CardType?          @map("balance_card_type")
 
   customer  Customer?        @relation(fields: [customerId], references: [id])
   branch    Branch           @relation(fields: [branchId], references: [id])
@@ -356,13 +408,16 @@ model SalesOrder {
 }
 
 model SalesOrderItem {
-  id           Int @id @default(autoincrement())
-  salesOrderId Int @map("sales_order_id")
-  productId    Int @map("product_id")
+  id           Int     @id @default(autoincrement())
+  salesOrderId Int     @map("sales_order_id")
+  productId    Int     @map("product_id")
   quantity     Int
-  unitPrice    Int @map("unit_price")
-  discount     Int @default(0)
-  lineTotal    Int @map("line_total")
+  unitPrice    Int     @map("unit_price")
+  discount     Int     @default(0)
+  lineTotal    Int     @map("line_total")
+  size         String?
+  materials    String?
+  color        String?
 
   salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
   product    Product    @relation(fields: [productId], references: [id])

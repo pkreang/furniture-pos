@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import {
@@ -38,6 +38,85 @@ function statusBadgeClass(s: SalesOrderStatus): string {
   if (s === "CONFIRMED") return "badge-warning";
   if (s === "CANCELLED") return "badge-danger";
   return "badge bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300";
+}
+
+const fullAddress = computed(() => {
+  if (!so.value) return "";
+  const parts = [
+    so.value.addrLine1,
+    so.value.addrMoo ? `หมู่ ${so.value.addrMoo}` : null,
+    so.value.addrSoi ? `ซอย ${so.value.addrSoi}` : null,
+    so.value.addrStreet ? `ถนน ${so.value.addrStreet}` : null,
+    so.value.addrKwang,
+    so.value.addrDistrict,
+    so.value.addrProvince,
+    so.value.addrPostal,
+  ].filter((s) => s && s.length > 0);
+  return parts.join(" ");
+});
+
+const hasBookingDetails = computed(() => {
+  if (!so.value) return false;
+  return Boolean(
+    so.value.bookNo ||
+      so.value.billingType ||
+      fullAddress.value ||
+      so.value.customerPhone2 ||
+      so.value.deliveryType ||
+      so.value.paymentTerm ||
+      so.value.deliveryInfo,
+  );
+});
+
+function paymentTermLabel(): string {
+  if (!so.value?.paymentTerm) return "";
+  switch (so.value.paymentTerm) {
+    case "DEPOSIT":
+      return t("paymentTermDeposit");
+    case "FULL":
+      return t("paymentTermFull");
+    case "INSTALLMENT":
+      return `${t("paymentTermInstallment")} ${so.value.installmentMonths ?? ""}`.trim();
+  }
+}
+
+function methodLabel(m: string | null): string {
+  switch (m) {
+    case "CASH":
+      return t("methodCash");
+    case "TRANSFER":
+      return t("methodTransfer");
+    case "CREDIT_CARD":
+      return t("methodCard");
+    default:
+      return "";
+  }
+}
+
+function cardLabel(c: string | null): string {
+  switch (c) {
+    case "VISA":
+      return t("cardVisa");
+    case "MASTERCARD":
+      return t("cardMaster");
+    case "OTHER":
+      return t("cardOther");
+    default:
+      return "";
+  }
+}
+
+function deliveryTypeLabel(): string {
+  switch (so.value?.deliveryType) {
+    case "COMPANY":
+      return t("deliveryTypeCompany");
+    case "SELF_PICKUP":
+      return t("deliveryTypeSelf");
+    case "OTHER":
+      return `${t("deliveryTypeOther")}${so.value.deliveryTypeOther ? `: ${so.value.deliveryTypeOther}` : ""}`;
+    default:
+      return "";
+  }
 }
 
 async function load(): Promise<void> {
@@ -105,6 +184,15 @@ onMounted(load);
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
+          <a
+            v-if="so.status !== 'DRAFT'"
+            :href="`/sales-orders/${so.id}/print`"
+            target="_blank"
+            rel="noopener"
+            class="btn-secondary"
+          >
+            {{ t("printBooking") }}
+          </a>
           <template v-if="so.status === 'DRAFT'">
             <RouterLink
               v-if="auth.hasPermission('so.manage')"
@@ -164,6 +252,10 @@ onMounted(load);
           <span class="text-slate-500 dark:text-slate-400">{{ t("branches") }}: </span>
           <span class="text-slate-800 dark:text-slate-200 font-medium">{{ so.branch?.name ?? "—" }}</span>
         </div>
+        <div v-if="so.bookNo">
+          <span class="text-slate-500 dark:text-slate-400">{{ t("bookNo") }}: </span>
+          <span class="text-slate-800 dark:text-slate-200">{{ so.bookNo }}</span>
+        </div>
         <div>
           <span class="text-slate-500 dark:text-slate-400">{{ t("orderDate") }}: </span>
           <span class="text-slate-800 dark:text-slate-200">{{ new Date(so.orderDate).toLocaleDateString() }}</span>
@@ -193,6 +285,22 @@ onMounted(load);
             {{ so.quotation.number }}
           </RouterLink>
         </div>
+        <div v-if="so.customerPhone2">
+          <span class="text-slate-500 dark:text-slate-400">{{ t("phone2") }}: </span>
+          <span class="text-slate-800 dark:text-slate-200">{{ so.customerPhone2 }}</span>
+        </div>
+        <div v-if="so.billingType" class="md:col-span-2">
+          <span class="text-slate-500 dark:text-slate-400">{{ t("billingType") }}: </span>
+          <span class="text-slate-800 dark:text-slate-200">{{
+            so.billingType === "HEAD_OFFICE"
+              ? t("headOffice")
+              : `${t("branchOffice")}${so.billingBranchNo ? ` (${so.billingBranchNo})` : ""}`
+          }}</span>
+        </div>
+        <div v-if="fullAddress" class="md:col-span-2">
+          <span class="text-slate-500 dark:text-slate-400">{{ t("address") }}: </span>
+          <span class="text-slate-800 dark:text-slate-200">{{ fullAddress }}</span>
+        </div>
         <div v-if="so.notes" class="md:col-span-2">
           <span class="text-slate-500 dark:text-slate-400">{{ t("notes") }}: </span>
           <span class="text-slate-800 dark:text-slate-200">{{ so.notes }}</span>
@@ -204,6 +312,9 @@ onMounted(load);
           <thead>
             <tr>
               <th>{{ t("products") }}</th>
+              <th>{{ t("itemSize") }}</th>
+              <th>{{ t("itemMaterials") }}</th>
+              <th>{{ t("itemColor") }}</th>
               <th class="text-right">{{ t("quantity") }}</th>
               <th class="text-right">{{ t("price") }}</th>
               <th class="text-right">{{ t("discount") }}</th>
@@ -213,6 +324,9 @@ onMounted(load);
           <tbody>
             <tr v-for="it in so.items ?? []" :key="it.id">
               <td>{{ it.product?.name ?? `#${it.productId}` }}</td>
+              <td>{{ it.size ?? "—" }}</td>
+              <td>{{ it.materials ?? "—" }}</td>
+              <td>{{ it.color ?? "—" }}</td>
               <td class="text-right">{{ it.quantity }}</td>
               <td class="text-right">{{ it.unitPrice.toLocaleString() }}</td>
               <td class="text-right">{{ it.discount.toLocaleString() }}</td>
@@ -220,6 +334,35 @@ onMounted(load);
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div v-if="hasBookingDetails" class="card mb-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+        <div v-if="so.deliveryType">
+          <span class="text-slate-500 dark:text-slate-400">{{ t("deliveryType") }}: </span>
+          <span class="text-slate-800 dark:text-slate-200">{{ deliveryTypeLabel() }}</span>
+        </div>
+        <div>
+          <span class="text-slate-500 dark:text-slate-400">{{ t("canShipImmediately") }}: </span>
+          <span class="text-slate-800 dark:text-slate-200">{{ so.canShipImmediately ? t("yes") : t("no") }}</span>
+        </div>
+        <div v-if="so.paymentTerm">
+          <span class="text-slate-500 dark:text-slate-400">{{ t("paymentTerm") }}: </span>
+          <span class="text-slate-800 dark:text-slate-200">{{ paymentTermLabel() }}</span>
+        </div>
+        <div v-if="so.depositMethod">
+          <span class="text-slate-500 dark:text-slate-400">{{ t("depositMethodSection") }}: </span>
+          <span class="text-slate-800 dark:text-slate-200">
+            {{ methodLabel(so.depositMethod) }}
+            <span v-if="so.depositMethod === 'CREDIT_CARD'"> ({{ cardLabel(so.depositCardType) }})</span>
+          </span>
+        </div>
+        <div v-if="so.balanceMethod">
+          <span class="text-slate-500 dark:text-slate-400">{{ t("balanceMethodSection") }}: </span>
+          <span class="text-slate-800 dark:text-slate-200">
+            {{ methodLabel(so.balanceMethod) }}
+            <span v-if="so.balanceMethod === 'CREDIT_CARD'"> ({{ cardLabel(so.balanceCardType) }})</span>
+          </span>
+        </div>
       </div>
 
       <div class="card mb-4 max-w-sm ml-auto">

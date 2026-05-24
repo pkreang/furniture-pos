@@ -1,4 +1,11 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import type {
+  BillingType,
+  SoDeliveryType,
+  PaymentTerm,
+  PaymentMethodKind,
+  CardType,
+} from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { applyStockMovement, applyStockReservation } from "../stock/service.js";
 import { nextSoCode } from "./numbering.js";
@@ -30,9 +37,38 @@ export interface SoItemInput {
   quantity: number;
   unitPrice: number;
   discount?: number;
+  size?: string | null;
+  materials?: string | null;
+  color?: string | null;
 }
 
-export interface CreateSoArgs {
+/** Booking-form fields shared by create + update. All optional. */
+export interface SoBookingFields {
+  bookNo?: string | null;
+  billingType?: BillingType | null;
+  billingBranchNo?: string | null;
+  customerPhone2?: string | null;
+  addrLine1?: string | null;
+  addrMoo?: string | null;
+  addrSoi?: string | null;
+  addrStreet?: string | null;
+  addrKwang?: string | null;
+  addrDistrict?: string | null;
+  addrProvince?: string | null;
+  addrPostal?: string | null;
+  canShipImmediately?: boolean;
+  deliveryType?: SoDeliveryType | null;
+  deliveryTypeOther?: string | null;
+  deliveryInfo?: Prisma.InputJsonValue | null;
+  paymentTerm?: PaymentTerm | null;
+  installmentMonths?: number | null;
+  depositMethod?: PaymentMethodKind | null;
+  depositCardType?: CardType | null;
+  balanceMethod?: PaymentMethodKind | null;
+  balanceCardType?: CardType | null;
+}
+
+export interface CreateSoArgs extends SoBookingFields {
   customerId?: number;
   branchId: number;
   createdById: number;
@@ -45,7 +81,7 @@ export interface CreateSoArgs {
   items: SoItemInput[];
 }
 
-export interface UpdateSoArgs {
+export interface UpdateSoArgs extends SoBookingFields {
   customerId?: number | null;
   branchId?: number;
   dueDate?: Date | null;
@@ -62,6 +98,9 @@ interface NormalisedItem {
   unitPrice: number;
   discount: number;
   lineTotal: number;
+  size?: string | null;
+  materials?: string | null;
+  color?: string | null;
 }
 
 interface Totals {
@@ -118,8 +157,70 @@ async function validateItems(
       unitPrice: it.unitPrice,
       discount,
       lineTotal: gross - discount,
+      size: it.size ?? null,
+      materials: it.materials ?? null,
+      color: it.color ?? null,
     };
   });
+}
+
+interface BookingDbFields {
+  bookNo?: string | null;
+  billingType?: BillingType | null;
+  billingBranchNo?: string | null;
+  customerPhone2?: string | null;
+  addrLine1?: string | null;
+  addrMoo?: string | null;
+  addrSoi?: string | null;
+  addrStreet?: string | null;
+  addrKwang?: string | null;
+  addrDistrict?: string | null;
+  addrProvince?: string | null;
+  addrPostal?: string | null;
+  canShipImmediately?: boolean;
+  deliveryType?: SoDeliveryType | null;
+  deliveryTypeOther?: string | null;
+  deliveryInfo?: Prisma.InputJsonValue | typeof Prisma.JsonNull;
+  paymentTerm?: PaymentTerm | null;
+  installmentMonths?: number | null;
+  depositMethod?: PaymentMethodKind | null;
+  depositCardType?: CardType | null;
+  balanceMethod?: PaymentMethodKind | null;
+  balanceCardType?: CardType | null;
+}
+
+/**
+ * Picks just the booking-form fields out of args so they can be spread into
+ * a Prisma create/update payload without leaking unrelated keys.
+ */
+function pickBookingFields(args: SoBookingFields): BookingDbFields {
+  const data: BookingDbFields = {};
+  if (args.bookNo !== undefined) data.bookNo = args.bookNo;
+  if (args.billingType !== undefined) data.billingType = args.billingType;
+  if (args.billingBranchNo !== undefined) data.billingBranchNo = args.billingBranchNo;
+  if (args.customerPhone2 !== undefined) data.customerPhone2 = args.customerPhone2;
+  if (args.addrLine1 !== undefined) data.addrLine1 = args.addrLine1;
+  if (args.addrMoo !== undefined) data.addrMoo = args.addrMoo;
+  if (args.addrSoi !== undefined) data.addrSoi = args.addrSoi;
+  if (args.addrStreet !== undefined) data.addrStreet = args.addrStreet;
+  if (args.addrKwang !== undefined) data.addrKwang = args.addrKwang;
+  if (args.addrDistrict !== undefined) data.addrDistrict = args.addrDistrict;
+  if (args.addrProvince !== undefined) data.addrProvince = args.addrProvince;
+  if (args.addrPostal !== undefined) data.addrPostal = args.addrPostal;
+  if (args.canShipImmediately !== undefined) data.canShipImmediately = args.canShipImmediately;
+  if (args.deliveryType !== undefined) data.deliveryType = args.deliveryType;
+  if (args.deliveryTypeOther !== undefined) data.deliveryTypeOther = args.deliveryTypeOther;
+  if (args.deliveryInfo !== undefined) {
+    data.deliveryInfo =
+      args.deliveryInfo === null ? Prisma.JsonNull : args.deliveryInfo;
+  }
+  if (args.paymentTerm !== undefined) data.paymentTerm = args.paymentTerm;
+  if (args.installmentMonths !== undefined) data.installmentMonths = args.installmentMonths;
+  if (args.depositMethod !== undefined) data.depositMethod = args.depositMethod;
+  if (args.depositCardType !== undefined) data.depositCardType = args.depositCardType;
+  if (args.balanceMethod !== undefined) data.balanceMethod = args.balanceMethod;
+  if (args.balanceCardType !== undefined) data.balanceCardType = args.balanceCardType;
+  return data;
 }
 
 function validateDeposit(deposit: number, totalAmount: number): void {
@@ -150,6 +251,7 @@ export async function createSalesOrder(args: CreateSoArgs): Promise<SoResult> {
 
     const code = await nextSoCode(tx);
 
+    const booking = pickBookingFields(args);
     const so = await tx.salesOrder.create({
       data: {
         code,
@@ -165,6 +267,7 @@ export async function createSalesOrder(args: CreateSoArgs): Promise<SoResult> {
         subtotal: totals.subtotal,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,
+        ...booking,
         items: { create: itemRows },
       },
       include: soInclude,
@@ -202,6 +305,7 @@ export async function updateSalesOrder(soId: number, args: UpdateSoArgs): Promis
 
     await tx.salesOrderItem.deleteMany({ where: { salesOrderId: soId } });
 
+    const booking = pickBookingFields(args);
     const updated = await tx.salesOrder.update({
       where: { id: soId },
       data: {
@@ -216,6 +320,7 @@ export async function updateSalesOrder(soId: number, args: UpdateSoArgs): Promis
         subtotal: totals.subtotal,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,
+        ...booking,
         items: { create: itemRows },
       },
       include: soInclude,

@@ -1,6 +1,29 @@
 import { apiGet, apiSend } from "./client";
 
 export type SalesOrderStatus = "DRAFT" | "CONFIRMED" | "DELIVERED" | "CANCELLED";
+export type BillingType = "HEAD_OFFICE" | "BRANCH";
+export type SoDeliveryType = "COMPANY" | "SELF_PICKUP" | "OTHER";
+export type PaymentTerm = "DEPOSIT" | "FULL" | "INSTALLMENT";
+export type PaymentMethodKind = "CASH" | "TRANSFER" | "CREDIT_CARD";
+export type CardType = "VISA" | "MASTERCARD" | "OTHER";
+
+/** Structured delivery-survey answers captured on the SO. Free-form JSON
+ * on the server side; the frontend layers strict typing on top. */
+export interface DeliveryInfo {
+  floor?: string;
+  roomDoor?: string;
+  preRoomDoor?: string;
+  hasLift?: boolean;
+  liftDoor?: string;
+  liftInterior?: string;
+  hasDoorBeforeLift?: boolean;
+  doorBeforeLiftSize?: string;
+  stair?: string;
+  stairTurns?: boolean;
+  stairTurnsSize?: string;
+  ceilingHeight?: string;
+  ceilingObstacles?: string;
+}
 
 export interface SalesOrderItem {
   id: number;
@@ -9,6 +32,9 @@ export interface SalesOrderItem {
   unitPrice: number;
   discount: number;
   lineTotal: number;
+  size?: string | null;
+  materials?: string | null;
+  color?: string | null;
   product?: { id: number; sku: string; name: string };
 }
 
@@ -31,10 +57,51 @@ export interface SalesOrder {
   poRef: string | null;
   createdById: number;
   createdAt: string;
+  // Booking-form fields
+  bookNo: string | null;
+  billingType: BillingType | null;
+  billingBranchNo: string | null;
+  customerPhone2: string | null;
+  addrLine1: string | null;
+  addrMoo: string | null;
+  addrSoi: string | null;
+  addrStreet: string | null;
+  addrKwang: string | null;
+  addrDistrict: string | null;
+  addrProvince: string | null;
+  addrPostal: string | null;
+  canShipImmediately: boolean;
+  deliveryType: SoDeliveryType | null;
+  deliveryTypeOther: string | null;
+  deliveryInfo: DeliveryInfo | null;
+  paymentTerm: PaymentTerm | null;
+  installmentMonths: number | null;
+  depositMethod: PaymentMethodKind | null;
+  depositCardType: CardType | null;
+  balanceMethod: PaymentMethodKind | null;
+  balanceCardType: CardType | null;
   items?: SalesOrderItem[];
-  customer?: { id: number; name: string; phone: string } | null;
+  customer?: {
+    id: number;
+    name: string;
+    phone: string;
+    email?: string | null;
+    taxId?: string | null;
+    taxName?: string | null;
+    taxAddress?: string | null;
+  } | null;
   branch?: { id: number; name: string; code: string };
   quotation?: { id: number; number: string } | null;
+}
+
+export interface SoItemInput {
+  productId: number;
+  quantity: number;
+  unitPrice: number;
+  discount?: number;
+  size?: string | null;
+  materials?: string | null;
+  color?: string | null;
 }
 
 export interface SoInput {
@@ -45,7 +112,29 @@ export interface SoInput {
   notes?: string;
   poRef?: string;
   discount?: number;
-  items: { productId: number; quantity: number; unitPrice: number; discount?: number }[];
+  items: SoItemInput[];
+  bookNo?: string | null;
+  billingType?: BillingType | null;
+  billingBranchNo?: string | null;
+  customerPhone2?: string | null;
+  addrLine1?: string | null;
+  addrMoo?: string | null;
+  addrSoi?: string | null;
+  addrStreet?: string | null;
+  addrKwang?: string | null;
+  addrDistrict?: string | null;
+  addrProvince?: string | null;
+  addrPostal?: string | null;
+  canShipImmediately?: boolean;
+  deliveryType?: SoDeliveryType | null;
+  deliveryTypeOther?: string | null;
+  deliveryInfo?: DeliveryInfo | null;
+  paymentTerm?: PaymentTerm | null;
+  installmentMonths?: number | null;
+  depositMethod?: PaymentMethodKind | null;
+  depositCardType?: CardType | null;
+  balanceMethod?: PaymentMethodKind | null;
+  balanceCardType?: CardType | null;
 }
 
 export interface SoFilters {

@@ -145,4 +145,6 @@ export const APP_SETTINGS: Record<string, string> = {
   "company.taxId": "0000000000000",
   "company.address": "สำนักงานใหญ่ กรุงเทพมหานคร",
   "company.phone": "02-000-0000",
+  "company.callcenter": "02-174-7437-8",
+  "company.fax": "02-174-7439",
 };
