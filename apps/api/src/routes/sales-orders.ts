@@ -71,6 +71,7 @@ const soBodySchema = {
     poRef: { type: "string" },
     discount: { type: "integer", minimum: 0 },
     items: { type: "array", minItems: 1, items: soItemSchema },
+    salespersonId: { type: "integer" },
     ...bookingFieldProps,
   },
 };
@@ -87,6 +88,7 @@ const soPatchSchema = {
     poRef: { type: "string" },
     discount: { type: "integer", minimum: 0 },
     items: { type: "array", minItems: 1, items: soItemSchema },
+    salespersonId: { type: "integer" },
     ...bookingFieldProps,
   },
 };
@@ -116,6 +118,7 @@ interface SoBody {
   poRef?: string;
   discount?: number;
   items: SoItemBody[];
+  salespersonId?: number;
   bookNo?: string | null;
   billingType?: BillingTypeStr | null;
   billingBranchNo?: string | null;
@@ -220,6 +223,8 @@ export async function salesOrderRoutes(app: FastifyInstance): Promise<void> {
         include: {
           customer: { select: { id: true, name: true, phone: true } },
           branch: { select: { id: true, name: true, code: true } },
+          createdBy: { select: { id: true, name: true } },
+          salesperson: { select: { id: true, name: true } },
         },
         orderBy: { id: "desc" },
         take: 200,
@@ -239,6 +244,8 @@ export async function salesOrderRoutes(app: FastifyInstance): Promise<void> {
           customer: true,
           branch: true,
           quotation: { select: { id: true, number: true } },
+          createdBy: { select: { id: true, name: true } },
+          salesperson: { select: { id: true, name: true } },
         },
       });
       if (!so) {
@@ -267,6 +274,7 @@ export async function salesOrderRoutes(app: FastifyInstance): Promise<void> {
           customerId: body.customerId ?? undefined,
           branchId: body.branchId,
           createdById: user.id,
+          salespersonId: body.salespersonId ?? user.id,
           dueDate: parseDate(body.dueDate) ?? null,
           deposit: body.deposit,
           notes: body.notes,
@@ -313,6 +321,7 @@ export async function salesOrderRoutes(app: FastifyInstance): Promise<void> {
         const so = await updateSalesOrder(id, {
           customerId: body.customerId === undefined ? undefined : body.customerId,
           branchId: body.branchId,
+          salespersonId: body.salespersonId,
           dueDate: parseDate(body.dueDate),
           deposit: body.deposit,
           notes: body.notes,

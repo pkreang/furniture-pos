@@ -17,6 +17,7 @@ import {
 import { fetchCustomers, type Customer } from "../api/customers";
 import { fetchBranches, type Branch } from "../api/branches";
 import { fetchProducts, type Product } from "../api/products";
+import { fetchUsers, type User } from "../api/users";
 import { useAuthStore } from "../stores/auth";
 
 const { t } = useI18n();
@@ -29,6 +30,8 @@ const editingId = computed(() => (route.params.id ? Number(route.params.id) : nu
 const customers = ref<Customer[]>([]);
 const branches = ref<Branch[]>([]);
 const products = ref<Product[]>([]);
+const users = ref<User[]>([]);
+const salesStaff = computed(() => users.value.filter((u) => u.isActive));
 const loaded = ref(false);
 const busy = ref(false);
 const error = ref<string | null>(null);
@@ -47,6 +50,7 @@ interface LineRow {
 
 const customerId = ref<number | "">("");
 const branchId = ref<number>(0);
+const salespersonId = ref<number | "">("");
 const dueDate = ref<string>("");
 const deposit = ref<number>(0);
 const notes = ref<string>("");
@@ -164,6 +168,10 @@ async function submit(): Promise<void> {
       customerId:
         typeof customerId.value === "number" && customerId.value > 0 ? customerId.value : null,
       branchId: branchId.value,
+      salespersonId:
+        typeof salespersonId.value === "number" && salespersonId.value > 0
+          ? salespersonId.value
+          : undefined,
       dueDate: dueDate.value || undefined,
       deposit: Number(deposit.value) || 0,
       notes: notes.value || undefined,
@@ -220,10 +228,11 @@ const surveyOpen = ref(true);
 
 onMounted(async () => {
   try {
-    [customers.value, branches.value, products.value] = await Promise.all([
+    [customers.value, branches.value, products.value, users.value] = await Promise.all([
       fetchCustomers(),
       fetchBranches(),
       fetchProducts(),
+      fetchUsers().catch(() => [] as User[]),
     ]);
     if (editingId.value !== null) {
       const existing = await fetchSalesOrder(editingId.value);
@@ -233,6 +242,7 @@ onMounted(async () => {
       existingCode.value = existing.code;
       customerId.value = existing.customerId ?? "";
       branchId.value = existing.branchId;
+      salespersonId.value = existing.salespersonId ?? existing.createdBy?.id ?? "";
       dueDate.value = existing.dueDate ? existing.dueDate.substring(0, 10) : "";
       deposit.value = existing.deposit;
       notes.value = existing.notes ?? "";
@@ -273,6 +283,7 @@ onMounted(async () => {
       surveyOpen.value = false;
     } else {
       branchId.value = auth.user?.branchId ?? branches.value[0]?.id ?? 0;
+      salespersonId.value = auth.user?.id ?? "";
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : "unknown error";
@@ -303,6 +314,13 @@ onMounted(async () => {
           <div class="form-row mb-0">
             <label>{{ t("poRef") }}</label>
             <input v-model="poRef" type="text" class="input" />
+          </div>
+          <div class="form-row mb-0">
+            <label>{{ t("salesperson") }}</label>
+            <select v-model.number="salespersonId" class="input">
+              <option value="">—</option>
+              <option v-for="u in salesStaff" :key="u.id" :value="u.id">{{ u.name }}</option>
+            </select>
           </div>
           <div class="form-row mb-0 md:col-span-2">
             <label>{{ t("notes") }}</label>

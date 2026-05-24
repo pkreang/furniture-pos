@@ -197,4 +197,5 @@ export default {
   customerSignature: "ลูกค้า / Customer Signature",
   salesSignature: "พนักงานขาย / Sales person",
   additionalInfo: "ข้อมูลเพิ่มเติม / More Information",
+  salesperson: "พนักงานขาย",
 };
