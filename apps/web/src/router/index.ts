@@ -178,6 +178,12 @@ const routes: RouteRecordRaw[] = [
     meta: { permission: "so.manage" },
   },
   {
+    path: "/sales-orders/:id/print",
+    name: "sales-order-print",
+    component: () => import("../views/BookingPrintView.vue"),
+    meta: { permission: "so.view" },
+  },
+  {
     path: "/pos",
     name: "pos",
     component: () => import("../views/PosView.vue"),

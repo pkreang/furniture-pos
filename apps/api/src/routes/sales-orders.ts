@@ -14,6 +14,11 @@ import {
 import { StockError } from "../stock/service.js";
 
 const SO_STATUSES = ["DRAFT", "CONFIRMED", "DELIVERED", "CANCELLED"] as const;
+const BILLING_TYPES = ["HEAD_OFFICE", "BRANCH"] as const;
+const SO_DELIVERY_TYPES = ["COMPANY", "SELF_PICKUP", "OTHER"] as const;
+const PAYMENT_TERMS = ["DEPOSIT", "FULL", "INSTALLMENT"] as const;
+const PAYMENT_METHOD_KINDS = ["CASH", "TRANSFER", "CREDIT_CARD"] as const;
+const CARD_TYPES = ["VISA", "MASTERCARD", "OTHER"] as const;
 
 const soItemSchema = {
   type: "object",
@@ -23,7 +28,35 @@ const soItemSchema = {
     quantity: { type: "integer", minimum: 1 },
     unitPrice: { type: "integer", minimum: 0 },
     discount: { type: "integer", minimum: 0 },
+    size: { type: ["string", "null"] },
+    materials: { type: ["string", "null"] },
+    color: { type: ["string", "null"] },
   },
+};
+
+const bookingFieldProps = {
+  bookNo: { type: ["string", "null"] },
+  billingType: { type: ["string", "null"], enum: [...BILLING_TYPES, null] },
+  billingBranchNo: { type: ["string", "null"] },
+  customerPhone2: { type: ["string", "null"] },
+  addrLine1: { type: ["string", "null"] },
+  addrMoo: { type: ["string", "null"] },
+  addrSoi: { type: ["string", "null"] },
+  addrStreet: { type: ["string", "null"] },
+  addrKwang: { type: ["string", "null"] },
+  addrDistrict: { type: ["string", "null"] },
+  addrProvince: { type: ["string", "null"] },
+  addrPostal: { type: ["string", "null"] },
+  canShipImmediately: { type: "boolean" },
+  deliveryType: { type: ["string", "null"], enum: [...SO_DELIVERY_TYPES, null] },
+  deliveryTypeOther: { type: ["string", "null"] },
+  deliveryInfo: { type: ["object", "null"] },
+  paymentTerm: { type: ["string", "null"], enum: [...PAYMENT_TERMS, null] },
+  installmentMonths: { type: ["integer", "null"], minimum: 0 },
+  depositMethod: { type: ["string", "null"], enum: [...PAYMENT_METHOD_KINDS, null] },
+  depositCardType: { type: ["string", "null"], enum: [...CARD_TYPES, null] },
+  balanceMethod: { type: ["string", "null"], enum: [...PAYMENT_METHOD_KINDS, null] },
+  balanceCardType: { type: ["string", "null"], enum: [...CARD_TYPES, null] },
 };
 
 const soBodySchema = {
@@ -38,6 +71,7 @@ const soBodySchema = {
     poRef: { type: "string" },
     discount: { type: "integer", minimum: 0 },
     items: { type: "array", minItems: 1, items: soItemSchema },
+    ...bookingFieldProps,
   },
 };
 
@@ -53,8 +87,25 @@ const soPatchSchema = {
     poRef: { type: "string" },
     discount: { type: "integer", minimum: 0 },
     items: { type: "array", minItems: 1, items: soItemSchema },
+    ...bookingFieldProps,
   },
 };
+
+type BillingTypeStr = (typeof BILLING_TYPES)[number];
+type SoDeliveryTypeStr = (typeof SO_DELIVERY_TYPES)[number];
+type PaymentTermStr = (typeof PAYMENT_TERMS)[number];
+type PaymentMethodKindStr = (typeof PAYMENT_METHOD_KINDS)[number];
+type CardTypeStr = (typeof CARD_TYPES)[number];
+
+interface SoItemBody {
+  productId: number;
+  quantity: number;
+  unitPrice: number;
+  discount?: number;
+  size?: string | null;
+  materials?: string | null;
+  color?: string | null;
+}
 
 interface SoBody {
   customerId?: number | null;
@@ -64,7 +115,58 @@ interface SoBody {
   notes?: string;
   poRef?: string;
   discount?: number;
-  items: { productId: number; quantity: number; unitPrice: number; discount?: number }[];
+  items: SoItemBody[];
+  bookNo?: string | null;
+  billingType?: BillingTypeStr | null;
+  billingBranchNo?: string | null;
+  customerPhone2?: string | null;
+  addrLine1?: string | null;
+  addrMoo?: string | null;
+  addrSoi?: string | null;
+  addrStreet?: string | null;
+  addrKwang?: string | null;
+  addrDistrict?: string | null;
+  addrProvince?: string | null;
+  addrPostal?: string | null;
+  canShipImmediately?: boolean;
+  deliveryType?: SoDeliveryTypeStr | null;
+  deliveryTypeOther?: string | null;
+  deliveryInfo?: Record<string, unknown> | null;
+  paymentTerm?: PaymentTermStr | null;
+  installmentMonths?: number | null;
+  depositMethod?: PaymentMethodKindStr | null;
+  depositCardType?: CardTypeStr | null;
+  balanceMethod?: PaymentMethodKindStr | null;
+  balanceCardType?: CardTypeStr | null;
+}
+
+/** Plucks the booking-form fields from the request body so they can be passed
+ * through to the service layer's create/update args verbatim. */
+function bookingArgs(body: SoBody): Record<string, unknown> {
+  return {
+    bookNo: body.bookNo,
+    billingType: body.billingType,
+    billingBranchNo: body.billingBranchNo,
+    customerPhone2: body.customerPhone2,
+    addrLine1: body.addrLine1,
+    addrMoo: body.addrMoo,
+    addrSoi: body.addrSoi,
+    addrStreet: body.addrStreet,
+    addrKwang: body.addrKwang,
+    addrDistrict: body.addrDistrict,
+    addrProvince: body.addrProvince,
+    addrPostal: body.addrPostal,
+    canShipImmediately: body.canShipImmediately,
+    deliveryType: body.deliveryType,
+    deliveryTypeOther: body.deliveryTypeOther,
+    deliveryInfo: body.deliveryInfo,
+    paymentTerm: body.paymentTerm,
+    installmentMonths: body.installmentMonths,
+    depositMethod: body.depositMethod,
+    depositCardType: body.depositCardType,
+    balanceMethod: body.balanceMethod,
+    balanceCardType: body.balanceCardType,
+  };
 }
 
 function parseDate(input: string | undefined): Date | null | undefined {
@@ -171,6 +273,7 @@ export async function salesOrderRoutes(app: FastifyInstance): Promise<void> {
           poRef: body.poRef,
           discount: body.discount,
           items: body.items,
+          ...bookingArgs(body),
         });
         return reply.code(201).send(so);
       } catch (err) {
@@ -216,6 +319,7 @@ export async function salesOrderRoutes(app: FastifyInstance): Promise<void> {
           poRef: body.poRef,
           discount: body.discount,
           items: body.items,
+          ...bookingArgs(body),
         });
         return so;
       } catch (err) {

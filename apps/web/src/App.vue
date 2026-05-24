@@ -31,7 +31,7 @@ async function doLogout(): Promise<void> {
 
 <template>
   <div v-if="signedIn" class="flex h-screen bg-slate-50 dark:bg-slate-900">
-    <aside class="w-60 bg-slate-800 text-slate-300 overflow-y-auto flex-shrink-0">
+    <aside class="w-60 bg-slate-800 text-slate-300 overflow-y-auto flex-shrink-0 print:hidden">
       <div class="p-4 border-b border-slate-700">
         <h1 class="text-white font-bold text-lg">{{ t("appName") }}</h1>
       </div>
@@ -243,7 +243,7 @@ async function doLogout(): Promise<void> {
     </aside>
     <div class="flex-1 flex flex-col overflow-hidden">
       <header
-        class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between flex-shrink-0 dark:bg-slate-800 dark:border-slate-700"
+        class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between flex-shrink-0 dark:bg-slate-800 dark:border-slate-700 print:hidden"
       >
         <div></div>
         <div class="flex items-center gap-4">
