@@ -29,15 +29,41 @@ async function submit(): Promise<void> {
 
 <template>
   <div class="min-h-screen flex">
-    <aside
-      class="hidden lg:flex lg:flex-1 relative overflow-hidden bg-gradient-to-br from-stone-950 via-stone-800 to-amber-950"
-    >
+    <aside class="hidden lg:flex lg:flex-1 relative overflow-hidden bg-stone-950">
       <div
-        class="absolute inset-0 bg-cover bg-center opacity-50 mix-blend-overlay"
+        class="absolute inset-0 bg-gradient-to-br from-stone-950 via-stone-800 to-amber-950"
+      ></div>
+      <div
+        class="absolute inset-0"
+        style="
+          background: radial-gradient(
+            ellipse 80% 60% at 75% 15%,
+            rgba(245, 158, 11, 0.28),
+            transparent 65%
+          );
+        "
+      ></div>
+      <svg
+        class="absolute inset-0 w-full h-full opacity-[0.18]"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <defs>
+          <pattern id="elite-dots" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="0.7" fill="#fde68a" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#elite-dots)" />
+      </svg>
+      <div
+        class="absolute inset-0 bg-cover bg-center opacity-55 mix-blend-overlay"
         style="background-image: url('/login-hero.jpg')"
       ></div>
       <div
-        class="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-900/30 to-transparent"
+        class="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-900/20 to-transparent"
+      ></div>
+      <div
+        class="absolute inset-6 xl:inset-10 border border-amber-200/15 rounded-sm pointer-events-none"
       ></div>
       <div class="relative flex flex-col justify-between p-12 xl:p-16 text-white w-full">
         <div>
