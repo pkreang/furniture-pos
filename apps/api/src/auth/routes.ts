@@ -12,6 +12,13 @@ const COOKIE_OPTS = {
   maxAge: 7 * 24 * 60 * 60,
 };
 
+const CLEAR_COOKIE_OPTS = {
+  httpOnly: COOKIE_OPTS.httpOnly,
+  sameSite: COOKIE_OPTS.sameSite,
+  secure: COOKIE_OPTS.secure,
+  path: COOKIE_OPTS.path,
+};
+
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post(
     "/api/auth/login",
@@ -43,9 +50,14 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post("/api/auth/logout", { preHandler: [app.authenticate] }, async (request, reply) => {
-    if (request.sessionToken) await revokeSession(request.sessionToken);
-    reply.clearCookie(SESSION_COOKIE, { path: "/" });
+  // Logout is intentionally NOT behind app.authenticate so it stays idempotent:
+  // a client whose cookie is expired / revoked / corrupted should still be
+  // able to call it and have the browser cookie cleared. We best-effort revoke
+  // the DB session if the token is present and valid.
+  app.post("/api/auth/logout", async (request, reply) => {
+    const token = request.cookies[SESSION_COOKIE];
+    if (token) await revokeSession(token);
+    reply.clearCookie(SESSION_COOKIE, CLEAR_COOKIE_OPTS);
     return { ok: true };
   });
 
