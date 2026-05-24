@@ -56,7 +56,10 @@ export interface SalesOrder {
   quotationId: number | null;
   poRef: string | null;
   createdById: number;
+  salespersonId: number | null;
   createdAt: string;
+  createdBy?: { id: number; name: string };
+  salesperson?: { id: number; name: string } | null;
   // Booking-form fields
   bookNo: string | null;
   billingType: BillingType | null;
@@ -113,6 +116,7 @@ export interface SoInput {
   poRef?: string;
   discount?: number;
   items: SoItemInput[];
+  salespersonId?: number;
   bookNo?: string | null;
   billingType?: BillingType | null;
   billingBranchNo?: string | null;

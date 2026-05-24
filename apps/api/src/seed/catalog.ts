@@ -94,6 +94,7 @@ export const ROLES: RoleDef[] = [
     isBranchScoped: true,
     discountMaxPercent: 5,
     permissions: [
+      "users.view",
       "branches.view",
       "catalog.view",
       "stock.view",

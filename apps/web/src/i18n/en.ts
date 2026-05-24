@@ -197,4 +197,5 @@ export default {
   customerSignature: "Customer Signature",
   salesSignature: "Sales person",
   additionalInfo: "More Information",
+  salesperson: "Salesperson",
 };

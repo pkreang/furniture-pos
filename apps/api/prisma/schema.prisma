@@ -91,7 +91,8 @@ model User {
   zReportsGenerated     ZReport[]
   auditLogs             AuditLog[]
   purchaseOrders        PurchaseOrder[]
-  salesOrders           SalesOrder[]
+  salesOrdersCreated       SalesOrder[] @relation("SalesOrderCreatedBy")
+  salesOrdersAsSalesperson SalesOrder[] @relation("SalesOrderSalesperson")
 
   @@map("users")
 }
@@ -383,6 +384,7 @@ model SalesOrder {
   quotationId        Int?             @map("quotation_id")
   poRef              String?          @map("po_ref")
   createdById        Int              @map("created_by_id")
+  salespersonId      Int?             @map("salesperson_id")
   createdAt          DateTime         @default(now()) @map("created_at")
 
   bookNo             String?            @map("book_no")
@@ -408,12 +410,13 @@ model SalesOrder {
   balanceMethod      PaymentMethodKind? @map("balance_method")
   balanceCardType    CardType?          @map("balance_card_type")
 
-  customer  Customer?        @relation(fields: [customerId], references: [id])
-  branch    Branch           @relation(fields: [branchId], references: [id])
-  quotation Quotation?       @relation(fields: [quotationId], references: [id])
-  createdBy User             @relation(fields: [createdById], references: [id])
-  items     SalesOrderItem[]
-  movements StockMovement[]
+  customer    Customer?        @relation(fields: [customerId], references: [id])
+  branch      Branch           @relation(fields: [branchId], references: [id])
+  quotation   Quotation?       @relation(fields: [quotationId], references: [id])
+  createdBy   User             @relation("SalesOrderCreatedBy", fields: [createdById], references: [id])
+  salesperson User?            @relation("SalesOrderSalesperson", fields: [salespersonId], references: [id])
+  items       SalesOrderItem[]
+  movements   StockMovement[]
 
   @@map("sales_orders")
 }

@@ -256,6 +256,12 @@ onMounted(load);
           <span class="text-slate-500 dark:text-slate-400">{{ t("bookNo") }}: </span>
           <span class="text-slate-800 dark:text-slate-200">{{ so.bookNo }}</span>
         </div>
+        <div v-if="so.salesperson || so.createdBy">
+          <span class="text-slate-500 dark:text-slate-400">{{ t("salesperson") }}: </span>
+          <span class="text-slate-800 dark:text-slate-200 font-medium">
+            {{ (so.salesperson ?? so.createdBy)?.name }}
+          </span>
+        </div>
         <div>
           <span class="text-slate-500 dark:text-slate-400">{{ t("orderDate") }}: </span>
           <span class="text-slate-800 dark:text-slate-200">{{ new Date(so.orderDate).toLocaleDateString() }}</span>

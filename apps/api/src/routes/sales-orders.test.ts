@@ -341,4 +341,71 @@ describe("sales-orders routes", () => {
     expect(so.items).toHaveLength(1);
     expect(so.items[0].quantity).toBe(2);
   });
+
+  it("defaults salesperson to the creator when none is supplied", async () => {
+    const f = await fixture();
+    const userId = await createTestUser({
+      username: "creator",
+      permissions: ["so.manage", "so.view"],
+    });
+    const app = buildApp();
+    const cookies = await sessionCookie(userId);
+    const create = await app.inject({
+      method: "POST",
+      url: "/api/sales-orders",
+      cookies,
+      payload: {
+        branchId: f.branchId,
+        items: [{ productId: f.productId, quantity: 1, unitPrice: 100 }],
+      },
+    });
+    expect(create.statusCode).toBe(201);
+
+    const read = await app.inject({
+      method: "GET",
+      url: `/api/sales-orders/${create.json().id}`,
+      cookies,
+    });
+    await app.close();
+    expect(read.statusCode).toBe(200);
+    const body = read.json();
+    expect(body.salespersonId).toBe(userId);
+    expect(body.salesperson?.id).toBe(userId);
+    expect(body.createdBy?.id).toBe(userId);
+  });
+
+  it("records a salesperson override distinct from the creator", async () => {
+    const f = await fixture();
+    const creatorId = await createTestUser({
+      username: "creator",
+      permissions: ["so.manage", "so.view"],
+    });
+    const otherSalespersonId = await createTestUser({
+      username: "other-sales",
+      permissions: [],
+    });
+    const app = buildApp();
+    const cookies = await sessionCookie(creatorId);
+    const create = await app.inject({
+      method: "POST",
+      url: "/api/sales-orders",
+      cookies,
+      payload: {
+        branchId: f.branchId,
+        salespersonId: otherSalespersonId,
+        items: [{ productId: f.productId, quantity: 1, unitPrice: 100 }],
+      },
+    });
+    expect(create.statusCode).toBe(201);
+    const read = await app.inject({
+      method: "GET",
+      url: `/api/sales-orders/${create.json().id}`,
+      cookies,
+    });
+    await app.close();
+    const body = read.json();
+    expect(body.salespersonId).toBe(otherSalespersonId);
+    expect(body.salesperson?.id).toBe(otherSalespersonId);
+    expect(body.createdBy?.id).toBe(creatorId);
+  });
 });

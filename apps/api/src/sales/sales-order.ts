@@ -25,6 +25,8 @@ const soInclude = {
   customer: true,
   branch: true,
   quotation: true,
+  createdBy: { select: { id: true, name: true } },
+  salesperson: { select: { id: true, name: true } },
 } satisfies Prisma.SalesOrderInclude;
 
 export type SoResult = Prisma.SalesOrderGetPayload<{ include: typeof soInclude }>;
@@ -72,6 +74,7 @@ export interface CreateSoArgs extends SoBookingFields {
   customerId?: number;
   branchId: number;
   createdById: number;
+  salespersonId?: number;
   dueDate?: Date | null;
   deposit?: number;
   notes?: string;
@@ -84,6 +87,7 @@ export interface CreateSoArgs extends SoBookingFields {
 export interface UpdateSoArgs extends SoBookingFields {
   customerId?: number | null;
   branchId?: number;
+  salespersonId?: number;
   dueDate?: Date | null;
   deposit?: number;
   notes?: string;
@@ -258,6 +262,7 @@ export async function createSalesOrder(args: CreateSoArgs): Promise<SoResult> {
         customerId: args.customerId,
         branchId: args.branchId,
         createdById: args.createdById,
+        salespersonId: args.salespersonId ?? args.createdById,
         dueDate: args.dueDate ?? null,
         deposit,
         notes: args.notes,
@@ -312,6 +317,8 @@ export async function updateSalesOrder(soId: number, args: UpdateSoArgs): Promis
         customerId:
           args.customerId === undefined ? existing.customerId : args.customerId,
         branchId: args.branchId ?? existing.branchId,
+        salespersonId:
+          args.salespersonId === undefined ? existing.salespersonId : args.salespersonId,
         dueDate: args.dueDate === undefined ? existing.dueDate : args.dueDate,
         notes: args.notes ?? existing.notes,
         poRef: args.poRef ?? existing.poRef,
@@ -484,6 +491,7 @@ export async function convertQuotationToSo(
         branchId,
         quotationId: quotation.id,
         createdById: args.createdById,
+        salespersonId: args.createdById,
         dueDate: args.dueDate ?? null,
         deposit,
         notes: args.notes,

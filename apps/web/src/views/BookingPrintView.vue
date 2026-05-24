@@ -461,7 +461,10 @@ onMounted(async () => {
           <div class="mt-1">วันที่ / Date ............................</div>
         </div>
         <div class="text-center">
-          <div class="border-t border-slate-900 pt-1 mt-8 mx-4">
+          <div class="h-8 flex items-end justify-center pb-0.5 mx-4 font-medium">
+            {{ (so?.salesperson ?? so?.createdBy)?.name ?? "" }}
+          </div>
+          <div class="border-t border-slate-900 pt-1 mx-4">
             {{ t("salesSignature") }}
           </div>
           <div class="mt-1">วันที่ / Date ............................</div>
