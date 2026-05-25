@@ -6,6 +6,9 @@ export interface Dashboard {
   outstandingTotal: number;
   pendingDeliveries: number;
   lowStockCount: number;
+  salesByBranch: { branchId: number; name: string; total: number }[];
+  topProducts: { productId: number; sku: string; name: string; qty: number; total: number }[];
+  salesByMonth: { month: string; total: number }[];
 }
 
 export interface ZReport {

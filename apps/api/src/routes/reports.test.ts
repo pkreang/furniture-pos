@@ -107,5 +107,18 @@ describe("report routes", () => {
     expect(body.todaySalesCount).toBe(1);
     expect(body.todaySalesTotal).toBe(2000);
     expect(body.outstandingTotal).toBe(500);
+    expect(body.salesByBranch).toEqual([
+      { branchId: f.branchId, name: "สาขา", total: 2000 },
+    ]);
+    expect(body.topProducts).toHaveLength(1);
+    expect(body.topProducts[0]).toMatchObject({
+      productId: f.productId,
+      sku: "P",
+      name: "สินค้า",
+      qty: 2,
+      total: 2000,
+    });
+    expect(body.salesByMonth).toHaveLength(6);
+    expect(body.salesByMonth[5].total).toBe(2000);
   });
 });
