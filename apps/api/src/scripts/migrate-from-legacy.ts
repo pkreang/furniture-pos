@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import * as vm from "node:vm";
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { hashPassword } from "../auth/password.js";
+import { checkout, CheckoutError } from "../sales/checkout.js";
 
 type LegacyBranch = { id: number; name: string; code: string };
 type LegacyCategory = { id: string; name: string };
@@ -338,11 +339,181 @@ async function migrateUsers(
   return counts;
 }
 
+function makeRandom(seedValue: number): () => number {
+  let s = seedValue;
+  return () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+async function seedSampleSales(prisma: PrismaClient): Promise<number> {
+  const cashier = await prisma.user.findFirst({
+    where: {
+      isActive: true,
+      role: { permissions: { some: { permission: { key: "sales.create" } } } },
+    },
+    orderBy: { id: "asc" },
+  });
+  if (!cashier) {
+    console.warn("  skip sample sales: no user with sales.create permission");
+    return 0;
+  }
+
+  const branches = await prisma.branch.findMany({
+    where: { isWarehouse: false },
+    orderBy: { id: "asc" },
+  });
+  if (!branches.length) {
+    console.warn("  skip sample sales: no non-warehouse branches");
+    return 0;
+  }
+
+  const products = await prisma.product.findMany({
+    where: { isActive: true, stockLevels: { some: { quantity: { gt: 5 } } } },
+    include: { stockLevels: true },
+  });
+  if (products.length < 2) {
+    console.warn("  skip sample sales: not enough products with stock");
+    return 0;
+  }
+
+  const customers = await prisma.customer.findMany({ take: 10, orderBy: { id: "asc" } });
+
+  const rand = makeRandom(42);
+  const pick = <T>(arr: T[]): T => arr[Math.floor(rand() * arr.length)];
+
+  let created = 0;
+  const now = new Date();
+
+  const createSale = async (
+    branchId: number,
+    backdateTo: Date | null,
+    options: { partial?: boolean } = {},
+  ): Promise<void> => {
+    const inBranch = products.filter((p) =>
+      p.stockLevels.some((sl) => sl.branchId === branchId && sl.quantity > 5),
+    );
+    if (!inBranch.length) return;
+
+    const wanted = Math.floor(rand() * 2) + 1; // 1–2 distinct products
+    const used = new Set<number>();
+    const items: { productId: number; quantity: number }[] = [];
+    let priceSum = 0;
+    for (let attempt = 0; attempt < wanted * 4 && items.length < wanted; attempt++) {
+      const p = pick(inBranch);
+      if (used.has(p.id)) continue;
+      used.add(p.id);
+      const qty = Math.floor(rand() * 2) + 1; // 1–2
+      items.push({ productId: p.id, quantity: qty });
+      priceSum += p.basePrice * qty;
+    }
+    if (!items.length) return;
+
+    const customerId = customers.length && rand() > 0.4 ? pick(customers).id : undefined;
+    const amount = options.partial ? Math.floor(priceSum * 0.5) : priceSum;
+
+    try {
+      const sale = await checkout({
+        branchId,
+        cashierId: cashier.id,
+        customerId,
+        items,
+        payments: [{ method: "CASH", amount }],
+        maxDiscountPercent: null,
+      });
+      if (backdateTo) {
+        await prisma.sale.update({
+          where: { id: sale.id },
+          data: { createdAt: backdateTo },
+        });
+      }
+      created++;
+    } catch (err) {
+      if (err instanceof CheckoutError) return; // silently skip insufficient stock etc.
+      throw err;
+    }
+  };
+
+  for (let monthsAgo = 5; monthsAgo >= 1; monthsAgo--) {
+    for (let i = 0; i < 2; i++) {
+      const branch = pick(branches);
+      const date = new Date(
+        Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth() - monthsAgo,
+          Math.floor(rand() * 25) + 1,
+          Math.floor(rand() * 8) + 10,
+        ),
+      );
+      await createSale(branch.id, date);
+    }
+  }
+
+  for (let i = 0; i < 3 && i < branches.length; i++) {
+    await createSale(branches[i].id, null);
+  }
+  await createSale(branches[0].id, null, { partial: true });
+
+  return created;
+}
+
+async function seedSampleDeliveries(prisma: PrismaClient): Promise<number> {
+  const [zones, channels] = await Promise.all([
+    prisma.deliveryZone.findMany({ orderBy: { id: "asc" } }),
+    prisma.deliveryChannel.findMany({ orderBy: { id: "asc" } }),
+  ]);
+  if (!zones.length || !channels.length) {
+    console.warn("  skip sample deliveries: no zones or channels");
+    return 0;
+  }
+
+  const recentSales = await prisma.sale.findMany({
+    where: { delivery: null, status: "COMPLETED" },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    include: { customer: true },
+  });
+
+  const rand = makeRandom(99);
+  let created = 0;
+
+  for (const sale of recentSales.slice(0, 3)) {
+    const zone = zones[Math.floor(rand() * zones.length)];
+    const channel = channels[Math.floor(rand() * channels.length)];
+    const scheduled = new Date();
+    scheduled.setDate(scheduled.getDate() + 3 + Math.floor(rand() * 14));
+
+    try {
+      await prisma.delivery.create({
+        data: {
+          saleId: sale.id,
+          zoneId: zone.id,
+          channelId: channel.id,
+          status: "PENDING",
+          scheduledDate: scheduled,
+          addressText: "ที่อยู่ตัวอย่าง 123 ถนนสุขุมวิท แขวงคลองตัน เขตคลองเตย กรุงเทพฯ",
+          recipientName: sale.customer?.name ?? null,
+          recipientPhone: sale.customer?.phone ?? null,
+          fee: zone.fee,
+        },
+      });
+      created++;
+    } catch {
+      // skip duplicate / FK errors
+    }
+  }
+  return created;
+}
+
 async function run(): Promise<void> {
   const dryRun = process.argv.includes("--dry-run");
   const withUsers = process.argv.includes("--with-users");
+  const withSampleSales = process.argv.includes("--with-sample-sales");
 
-  console.log(`migrate-from-legacy ${dryRun ? "(dry-run)" : ""}${withUsers ? " --with-users" : ""}`);
+  console.log(
+    `migrate-from-legacy ${dryRun ? "(dry-run)" : ""}${withUsers ? " --with-users" : ""}${withSampleSales ? " --with-sample-sales" : ""}`,
+  );
   const data = loadLegacyAppData();
   console.log(`loaded ${data.branches.length} branches, ${data.products.length} products, ${data.customers.length} customers`);
 
@@ -383,6 +554,17 @@ async function run(): Promise<void> {
       );
     } catch (e) {
       if (!(e instanceof DryRunRollback)) throw e;
+    }
+
+    if (withSampleSales && !dryRun) {
+      const salesCreated = await seedSampleSales(prisma);
+      lines.push(`  sample sales       created=${salesCreated}`);
+      if (salesCreated > 0) {
+        const deliveriesCreated = await seedSampleDeliveries(prisma);
+        lines.push(`  sample deliveries  created=${deliveriesCreated}`);
+      }
+    } else if (withSampleSales && dryRun) {
+      lines.push("  sample sales       skipped (incompatible with --dry-run)");
     }
 
     console.log("");

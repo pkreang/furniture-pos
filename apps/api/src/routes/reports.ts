@@ -102,12 +102,89 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
         where: { ...scoped, quantity: { lt: LOW_STOCK_THRESHOLD } },
       });
 
+      const byBranch = await prisma.sale.groupBy({
+        by: ["branchId"],
+        where: { ...scoped, status: "COMPLETED", createdAt: { gte: dayStart } },
+        _sum: { total: true },
+      });
+      const branchIds = byBranch.map((b) => b.branchId);
+      const branchRows = branchIds.length
+        ? await prisma.branch.findMany({
+            where: { id: { in: branchIds } },
+            select: { id: true, name: true },
+          })
+        : [];
+      const branchNameById = new Map(branchRows.map((b) => [b.id, b.name]));
+      const salesByBranch = byBranch
+        .map((b) => ({
+          branchId: b.branchId,
+          name: branchNameById.get(b.branchId) ?? `#${b.branchId}`,
+          total: b._sum.total ?? 0,
+        }))
+        .sort((a, b) => b.total - a.total);
+
+      const monthStart = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+      );
+      const topItems = await prisma.saleItem.groupBy({
+        by: ["productId"],
+        where: {
+          sale: { ...scoped, status: "COMPLETED", createdAt: { gte: monthStart } },
+        },
+        _sum: { quantity: true, lineTotal: true },
+        orderBy: { _sum: { quantity: "desc" } },
+        take: 5,
+      });
+      const topProductIds = topItems.map((t) => t.productId);
+      const topProductRows = topProductIds.length
+        ? await prisma.product.findMany({
+            where: { id: { in: topProductIds } },
+            select: { id: true, sku: true, name: true },
+          })
+        : [];
+      const productById = new Map(topProductRows.map((p) => [p.id, p]));
+      const topProducts = topItems.map((t) => {
+        const p = productById.get(t.productId);
+        return {
+          productId: t.productId,
+          sku: p?.sku ?? "",
+          name: p?.name ?? `#${t.productId}`,
+          qty: t._sum.quantity ?? 0,
+          total: t._sum.lineTotal ?? 0,
+        };
+      });
+
+      const sixMonthsAgo = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1),
+      );
+      const recentSales = await prisma.sale.findMany({
+        where: { ...scoped, status: "COMPLETED", createdAt: { gte: sixMonthsAgo } },
+        select: { total: true, createdAt: true },
+      });
+      const monthTotals = new Map<string, number>();
+      for (let i = 0; i < 6; i++) {
+        const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5 + i, 1));
+        const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+        monthTotals.set(key, 0);
+      }
+      for (const s of recentSales) {
+        const key = `${s.createdAt.getUTCFullYear()}-${String(s.createdAt.getUTCMonth() + 1).padStart(2, "0")}`;
+        monthTotals.set(key, (monthTotals.get(key) ?? 0) + s.total);
+      }
+      const salesByMonth = Array.from(monthTotals.entries()).map(([month, total]) => ({
+        month,
+        total,
+      }));
+
       return {
         todaySalesCount: today._count,
         todaySalesTotal: today._sum.total ?? 0,
         outstandingTotal: outstanding._sum.outstanding ?? 0,
         pendingDeliveries,
         lowStockCount,
+        salesByBranch,
+        topProducts,
+        salesByMonth,
       };
     },
   );
