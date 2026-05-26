@@ -2,7 +2,12 @@
 import { onMounted, ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { fetchProducts, createProduct, updateProduct } from "../api/products";
+import {
+  fetchProducts,
+  createProduct,
+  updateProduct,
+  uploadProductImage,
+} from "../api/products";
 import { fetchCategories, type Category } from "../api/categories";
 
 const { t } = useI18n();
@@ -12,6 +17,24 @@ const router = useRouter();
 const editingId = computed(() => (route.params.id ? Number(route.params.id) : null));
 const categories = ref<Category[]>([]);
 const error = ref<string | null>(null);
+const uploading = ref(false);
+const uploadError = ref<string | null>(null);
+
+async function onPickFile(e: Event): Promise<void> {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  uploading.value = true;
+  uploadError.value = null;
+  try {
+    form.value.imageUrl = await uploadProductImage(file);
+  } catch (err) {
+    uploadError.value = err instanceof Error ? err.message : "อัปโหลดไม่สำเร็จ";
+  } finally {
+    uploading.value = false;
+    input.value = ""; // allow re-picking same file
+  }
+}
 
 const form = ref({
   sku: "",
@@ -98,16 +121,34 @@ async function submit(): Promise<void> {
           </label>
         </div>
         <div class="form-row">
-          <label>URL รูปสินค้า</label>
+          <label>รูปสินค้า</label>
+          <div class="flex items-center gap-3">
+            <label
+              class="btn-secondary cursor-pointer"
+              :class="uploading ? 'opacity-60 pointer-events-none' : ''"
+            >
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                class="hidden"
+                @change="onPickFile"
+                :disabled="uploading"
+              />
+              {{ uploading ? "กำลังอัปโหลด..." : "เลือกไฟล์" }}
+            </label>
+            <span class="text-xs text-slate-500 dark:text-slate-400">หรือวาง URL ด้านล่าง</span>
+          </div>
           <input
             v-model="form.imageUrl"
             type="url"
-            class="input"
+            class="input mt-2"
             placeholder="https://..."
+            :disabled="uploading"
           />
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            วาง URL รูปที่อัปโหลดไว้ที่อื่น (เช่น Imgur, Google Drive แชร์ลิงก์, Vercel Blob) หรือเว้นว่างเพื่อใช้ตัวอักษรย่อแทน
+            jpeg / png / webp / gif ≤ 5 MB ผ่าน Vercel Blob หรือวาง URL จาก Imgur / Cloudinary / Drive
           </p>
+          <p v-if="uploadError" class="text-red-600 text-sm mt-2">{{ uploadError }}</p>
           <img
             v-if="form.imageUrl.trim()"
             :src="form.imageUrl.trim()"
