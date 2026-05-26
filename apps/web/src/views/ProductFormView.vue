@@ -19,6 +19,7 @@ const form = ref({
   categoryId: 0,
   basePrice: 0,
   isSofa: false,
+  imageUrl: "",
 });
 
 onMounted(async () => {
@@ -33,6 +34,7 @@ onMounted(async () => {
         categoryId: existing.categoryId,
         basePrice: existing.basePrice,
         isSofa: existing.isSofa,
+        imageUrl: existing.imageUrl ?? "",
       };
     }
   }
@@ -40,6 +42,7 @@ onMounted(async () => {
 
 async function submit(): Promise<void> {
   error.value = null;
+  const trimmedUrl = form.value.imageUrl.trim();
   try {
     if (editingId.value !== null) {
       await updateProduct(editingId.value, {
@@ -47,9 +50,17 @@ async function submit(): Promise<void> {
         categoryId: form.value.categoryId,
         basePrice: form.value.basePrice,
         isSofa: form.value.isSofa,
+        imageUrl: trimmedUrl || null,
       });
     } else {
-      await createProduct(form.value);
+      await createProduct({
+        sku: form.value.sku,
+        name: form.value.name,
+        categoryId: form.value.categoryId,
+        basePrice: form.value.basePrice,
+        isSofa: form.value.isSofa,
+        imageUrl: trimmedUrl || null,
+      });
     }
     router.replace("/products");
   } catch (e) {
@@ -85,6 +96,25 @@ async function submit(): Promise<void> {
           <label class="flex items-center gap-2 font-normal">
             <input v-model="form.isSofa" type="checkbox" /> โซฟา
           </label>
+        </div>
+        <div class="form-row">
+          <label>URL รูปสินค้า</label>
+          <input
+            v-model="form.imageUrl"
+            type="url"
+            class="input"
+            placeholder="https://..."
+          />
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            วาง URL รูปที่อัปโหลดไว้ที่อื่น (เช่น Imgur, Google Drive แชร์ลิงก์, Vercel Blob) หรือเว้นว่างเพื่อใช้ตัวอักษรย่อแทน
+          </p>
+          <img
+            v-if="form.imageUrl.trim()"
+            :src="form.imageUrl.trim()"
+            alt="preview"
+            class="mt-3 w-40 h-32 object-cover rounded border border-slate-200 dark:border-slate-700"
+            @error="($event.target as HTMLImageElement).style.display = 'none'"
+          />
         </div>
         <p v-if="error" class="text-red-600 text-sm mb-3">{{ error }}</p>
         <div class="flex items-center gap-3">

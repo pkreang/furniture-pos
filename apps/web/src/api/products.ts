@@ -8,6 +8,7 @@ export interface Product {
   basePrice: number;
   isSofa: boolean;
   isActive: boolean;
+  imageUrl: string | null;
   category?: { name: string };
 }
 
@@ -17,6 +18,7 @@ export interface ProductInput {
   categoryId: number;
   basePrice: number;
   isSofa: boolean;
+  imageUrl?: string | null;
 }
 
 export interface SofaColor {
