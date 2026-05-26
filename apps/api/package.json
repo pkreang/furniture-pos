@@ -15,21 +15,23 @@
   "dependencies": {
     "@fastify/cookie": "^9.4.0",
     "@fastify/helmet": "^11.1.1",
+    "@fastify/multipart": "^10.0.0",
     "@fastify/rate-limit": "^9.1.0",
     "@prisma/client": "^5.20.0",
+    "@vercel/blob": "^2.4.0",
     "argon2": "^0.41.1",
     "fastify": "^4.28.1",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.16"
   },
   "devDependencies": {
-    "tsx": "^4.19.1",
-    "typescript": "^5.6.2",
-    "vitest": "^2.1.1",
     "@types/node": "^20.16.5",
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.16",
-    "prisma": "^5.20.0"
+    "prisma": "^5.20.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1"
   },
   "prisma": {
     "seed": "tsx src/seed/index.ts"

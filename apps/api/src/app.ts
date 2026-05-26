@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import helmet from "@fastify/helmet";
+import multipart from "@fastify/multipart";
 import { registerErrorHandlers } from "./errors.js";
 import authPlugin from "./auth/plugin.js";
 import auditPlugin from "./audit/plugin.js";
@@ -26,12 +27,14 @@ import { auditRoutes } from "./routes/audit.js";
 import { exportRoutes } from "./routes/export.js";
 import { importRoutes } from "./routes/import.js";
 import { settingsRoutes } from "./routes/settings.js";
+import { uploadRoutes } from "./routes/uploads.js";
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: false });
 
   registerErrorHandlers(app);
   app.register(helmet);
+  app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } });
 
   app.get("/health", async () => ({ status: "ok" }));
 
@@ -60,6 +63,7 @@ export function buildApp(): FastifyInstance {
   app.register(exportRoutes);
   app.register(importRoutes);
   app.register(settingsRoutes);
+  app.register(uploadRoutes);
 
   return app;
 }

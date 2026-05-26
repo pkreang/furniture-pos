@@ -50,3 +50,19 @@ export function updateProduct(id: number, patch: Partial<ProductInput>): Promise
 export function fetchSofaMaterials(): Promise<SofaMaterial[]> {
   return apiGet<SofaMaterial[]>("/api/sofa-materials");
 }
+
+export async function uploadProductImage(file: File): Promise<string> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch("/api/uploads/image", {
+    method: "POST",
+    credentials: "include",
+    body: form,
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { message?: string } | null;
+    throw new Error(body?.message ?? `upload failed (${res.status})`);
+  }
+  const json = (await res.json()) as { url: string };
+  return json.url;
+}
