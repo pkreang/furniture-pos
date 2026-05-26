@@ -42,6 +42,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
             categoryId: { type: "integer" },
             basePrice: { type: "integer", minimum: 0 },
             isSofa: { type: "boolean" },
+            imageUrl: { type: "string", nullable: true },
           },
         },
       },
@@ -53,6 +54,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
         categoryId: number;
         basePrice: number;
         isSofa?: boolean;
+        imageUrl?: string | null;
       };
       try {
         const product = await prisma.product.create({
@@ -62,6 +64,7 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
             categoryId: body.categoryId,
             basePrice: body.basePrice,
             isSofa: body.isSofa ?? false,
+            imageUrl: body.imageUrl?.trim() || null,
           },
         });
         return reply.code(201).send(product);
@@ -87,16 +90,23 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
             basePrice: { type: "integer", minimum: 0 },
             isSofa: { type: "boolean" },
             isActive: { type: "boolean" },
+            imageUrl: { type: "string", nullable: true },
           },
         },
       },
     },
     async (request, reply) => {
       const id = Number((request.params as { id: string }).id);
+      const body = request.body as Record<string, unknown>;
+      const data: Record<string, unknown> = { ...body };
+      if ("imageUrl" in body) {
+        const raw = body.imageUrl;
+        data.imageUrl = typeof raw === "string" ? raw.trim() || null : null;
+      }
       try {
         return await prisma.product.update({
           where: { id },
-          data: request.body as Record<string, unknown>,
+          data,
         });
       } catch (err) {
         if (isUniqueViolation(err)) {
