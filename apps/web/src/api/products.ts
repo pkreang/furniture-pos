@@ -9,6 +9,9 @@ export interface Product {
   isSofa: boolean;
   isActive: boolean;
   imageUrl: string | null;
+  size: string | null;
+  material: string | null;
+  color: string | null;
   category?: { name: string };
 }
 
@@ -19,6 +22,9 @@ export interface ProductInput {
   basePrice: number;
   isSofa: boolean;
   imageUrl?: string | null;
+  size?: string | null;
+  material?: string | null;
+  color?: string | null;
 }
 
 export interface SofaColor {

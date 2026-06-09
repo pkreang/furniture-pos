@@ -108,7 +108,15 @@ onMounted(async () => {
         <tbody>
           <tr v-for="l in levels" :key="`${l.productId}-${l.branchId}`">
             <td class="font-mono text-xs text-slate-600 dark:text-slate-300">{{ l.product.sku }}</td>
-            <td>{{ l.product.name }}</td>
+            <td>
+              {{ l.product.name }}
+              <span
+                v-if="[l.product.size, l.product.material, l.product.color].some(Boolean)"
+                class="block text-xs text-slate-500 dark:text-slate-400"
+              >
+                {{ [l.product.size, l.product.material, l.product.color].filter(Boolean).join(" · ") }}
+              </span>
+            </td>
             <td>{{ l.branch.name }}</td>
             <td class="text-right">{{ l.quantity }}</td>
             <td class="text-right">{{ l.reservedQty }}</td>

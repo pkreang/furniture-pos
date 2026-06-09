@@ -1,12 +1,21 @@
 import { apiGet, apiSend } from "./client";
 
+export interface ProductBrief {
+  sku: string;
+  name: string;
+  size?: string | null;
+  material?: string | null;
+  color?: string | null;
+  imageUrl?: string | null;
+}
+
 export interface StockLevel {
   productId: number;
   branchId: number;
   quantity: number;
   reservedQty: number;
   available: number;
-  product: { sku: string; name: string };
+  product: ProductBrief;
   branch: { name: string; code: string };
 }
 
@@ -30,7 +39,7 @@ export interface Transfer {
   quantity: number;
   note: string | null;
   createdAt: string;
-  product: { sku: string; name: string };
+  product: ProductBrief;
   fromBranch: { name: string; code: string };
   toBranch: { name: string; code: string };
 }

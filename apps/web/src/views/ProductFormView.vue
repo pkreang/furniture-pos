@@ -43,6 +43,9 @@ const form = ref({
   basePrice: 0,
   isSofa: false,
   imageUrl: "",
+  size: "",
+  material: "",
+  color: "",
 });
 
 onMounted(async () => {
@@ -58,6 +61,9 @@ onMounted(async () => {
         basePrice: existing.basePrice,
         isSofa: existing.isSofa,
         imageUrl: existing.imageUrl ?? "",
+        size: existing.size ?? "",
+        material: existing.material ?? "",
+        color: existing.color ?? "",
       };
     }
   }
@@ -66,6 +72,11 @@ onMounted(async () => {
 async function submit(): Promise<void> {
   error.value = null;
   const trimmedUrl = form.value.imageUrl.trim();
+  const attrs = {
+    size: form.value.size.trim() || null,
+    material: form.value.material.trim() || null,
+    color: form.value.color.trim() || null,
+  };
   try {
     if (editingId.value !== null) {
       await updateProduct(editingId.value, {
@@ -74,6 +85,7 @@ async function submit(): Promise<void> {
         basePrice: form.value.basePrice,
         isSofa: form.value.isSofa,
         imageUrl: trimmedUrl || null,
+        ...attrs,
       });
     } else {
       await createProduct({
@@ -83,6 +95,7 @@ async function submit(): Promise<void> {
         basePrice: form.value.basePrice,
         isSofa: form.value.isSofa,
         imageUrl: trimmedUrl || null,
+        ...attrs,
       });
     }
     router.replace("/products");
@@ -119,6 +132,20 @@ async function submit(): Promise<void> {
           <label class="flex items-center gap-2 font-normal">
             <input v-model="form.isSofa" type="checkbox" /> โซฟา
           </label>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="form-row">
+            <label>{{ t("itemSize") }}</label>
+            <input v-model="form.size" class="input" />
+          </div>
+          <div class="form-row">
+            <label>{{ t("itemMaterials") }}</label>
+            <input v-model="form.material" class="input" />
+          </div>
+          <div class="form-row">
+            <label>{{ t("itemColor") }}</label>
+            <input v-model="form.color" class="input" />
+          </div>
         </div>
         <div class="form-row">
           <label>รูปสินค้า</label>

@@ -17,7 +17,15 @@ export async function transferRoutes(app: FastifyInstance): Promise<void> {
       return prisma.transfer.findMany({
         where,
         include: {
-          product: { select: { sku: true, name: true } },
+          product: {
+            select: {
+              sku: true,
+              name: true,
+              size: true,
+              material: true,
+              color: true,
+            },
+          },
           fromBranch: { select: { name: true, code: true } },
           toBranch: { select: { name: true, code: true } },
         },
