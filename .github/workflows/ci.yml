@@ -43,6 +43,9 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL_TEST: postgresql://furniture:furniture@localhost:5432/furniture_pos_test
+      # schema.prisma declares directUrl = env("DIRECT_URL"); migrate deploy
+      # needs it. Locally pooled and direct point at the same Postgres.
+      DIRECT_URL: postgresql://furniture:furniture@localhost:5432/furniture_pos_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -87,6 +90,7 @@ jobs:
         run: |
           docker run -d --name api-smoke --network host \
             -e DATABASE_URL=postgresql://furniture:furniture@localhost:5432/furniture_pos \
+            -e DIRECT_URL=postgresql://furniture:furniture@localhost:5432/furniture_pos \
             -e PORT=3000 \
             -e NODE_ENV=production \
             -e SEED_ADMIN_USERNAME=admin \
