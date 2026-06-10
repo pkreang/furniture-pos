@@ -7,6 +7,8 @@ import {
   createProduct,
   updateProduct,
   uploadProductImage,
+  fetchSofaMaterials,
+  type SofaMaterial,
 } from "../api/products";
 import { fetchCategories, type Category } from "../api/categories";
 
@@ -16,6 +18,12 @@ const router = useRouter();
 
 const editingId = computed(() => (route.params.id ? Number(route.params.id) : null));
 const categories = ref<Category[]>([]);
+const sofaMaterials = ref<SofaMaterial[]>([]);
+const allColors = computed(() => {
+  const seen = new Set<string>();
+  for (const m of sofaMaterials.value) for (const c of m.colors) seen.add(c.name);
+  return [...seen].sort();
+});
 const error = ref<string | null>(null);
 const uploading = ref(false);
 const uploadError = ref<string | null>(null);
@@ -49,7 +57,9 @@ const form = ref({
 });
 
 onMounted(async () => {
-  categories.value = await fetchCategories();
+  const [cats, mats] = await Promise.all([fetchCategories(), fetchSofaMaterials()]);
+  categories.value = cats;
+  sofaMaterials.value = mats;
   if (categories.value[0]) form.value.categoryId = categories.value[0].id;
   if (editingId.value !== null) {
     const existing = (await fetchProducts()).find((p) => p.id === editingId.value);
@@ -140,11 +150,17 @@ async function submit(): Promise<void> {
           </div>
           <div class="form-row">
             <label>{{ t("itemMaterials") }}</label>
-            <input v-model="form.material" class="input" />
+            <input v-model="form.material" class="input" list="material-options" />
+            <datalist id="material-options">
+              <option v-for="m in sofaMaterials" :key="m.key" :value="m.name" />
+            </datalist>
           </div>
           <div class="form-row">
             <label>{{ t("itemColor") }}</label>
-            <input v-model="form.color" class="input" />
+            <input v-model="form.color" class="input" list="color-options" />
+            <datalist id="color-options">
+              <option v-for="c in allColors" :key="c" :value="c" />
+            </datalist>
           </div>
         </div>
         <div class="form-row">
