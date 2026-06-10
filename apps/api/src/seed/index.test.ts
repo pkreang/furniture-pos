@@ -32,7 +32,8 @@ describe("runSeed", () => {
       include: { permissions: true },
     });
     expect(cashier.isBranchScoped).toBe(true);
-    expect(cashier.permissions).toHaveLength(13);
+    const cashierDef = ROLES.find((r) => r.key === "cashier");
+    expect(cashier.permissions).toHaveLength(cashierDef?.permissions.length ?? 0);
   });
 
   it("seeds the company app settings idempotently", async () => {

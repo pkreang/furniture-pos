@@ -289,6 +289,7 @@ describe("sales-orders routes", () => {
     // Now try to ring up a POS sale of 2: only 1 is actually available.
     const cashierId = await createTestUser({
       username: "csh",
+      roleKey: "csh-role",
       permissions: ["sales.create"],
     });
     const cshCookies = await sessionCookie(cashierId);
@@ -382,6 +383,7 @@ describe("sales-orders routes", () => {
     });
     const otherSalespersonId = await createTestUser({
       username: "other-sales",
+      roleKey: "other-sales-role",
       permissions: [],
     });
     const app = buildApp();
