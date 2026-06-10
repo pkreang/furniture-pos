@@ -11,6 +11,7 @@ import {
   type SofaMaterial,
 } from "../api/products";
 import { fetchCategories, type Category } from "../api/categories";
+import ComboBox from "../components/ComboBox.vue";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -19,7 +20,14 @@ const router = useRouter();
 const editingId = computed(() => (route.params.id ? Number(route.params.id) : null));
 const categories = ref<Category[]>([]);
 const sofaMaterials = ref<SofaMaterial[]>([]);
-const allColors = computed(() => {
+
+const materialNames = computed(() => sofaMaterials.value.map((m) => m.name));
+
+// Colors narrow to the picked material when it matches a known palette
+// material; otherwise (free-text material, or none) show every color.
+const colorOptions = computed(() => {
+  const picked = sofaMaterials.value.find((m) => m.name === form.value.material);
+  if (picked) return picked.colors.map((c) => c.name);
   const seen = new Set<string>();
   for (const m of sofaMaterials.value) for (const c of m.colors) seen.add(c.name);
   return [...seen].sort();
@@ -150,17 +158,11 @@ async function submit(): Promise<void> {
           </div>
           <div class="form-row">
             <label>{{ t("itemMaterials") }}</label>
-            <input v-model="form.material" class="input" list="material-options" />
-            <datalist id="material-options">
-              <option v-for="m in sofaMaterials" :key="m.key" :value="m.name" />
-            </datalist>
+            <ComboBox v-model="form.material" :options="materialNames" />
           </div>
           <div class="form-row">
             <label>{{ t("itemColor") }}</label>
-            <input v-model="form.color" class="input" list="color-options" />
-            <datalist id="color-options">
-              <option v-for="c in allColors" :key="c" :value="c" />
-            </datalist>
+            <ComboBox v-model="form.color" :options="colorOptions" />
           </div>
         </div>
         <div class="form-row">
