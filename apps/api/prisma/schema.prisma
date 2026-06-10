@@ -128,6 +128,10 @@ model Product {
   basePrice  Int      @map("base_price")
   isSofa     Boolean  @default(false) @map("is_sofa")
   isActive   Boolean  @default(true) @map("is_active")
+  imageUrl   String?  @map("image_url")
+  size       String?
+  material   String?
+  color      String?
   createdAt  DateTime @default(now()) @map("created_at")
 
   category       Category            @relation(fields: [categoryId], references: [id])

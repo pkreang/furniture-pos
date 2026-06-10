@@ -23,7 +23,16 @@ export async function stockRoutes(app: FastifyInstance): Promise<void> {
       const levels = await prisma.stockLevel.findMany({
         where,
         include: {
-          product: { select: { sku: true, name: true } },
+          product: {
+            select: {
+              sku: true,
+              name: true,
+              size: true,
+              material: true,
+              color: true,
+              imageUrl: true,
+            },
+          },
           branch: { select: { name: true, code: true } },
         },
         orderBy: [{ branchId: "asc" }, { productId: "asc" }],

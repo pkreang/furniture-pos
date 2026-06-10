@@ -29,6 +29,11 @@ const redeemPoints = ref(0);
 
 const productById = computed(() => new Map(products.value.map((p) => [p.id, p])));
 
+function attrLine(p?: { size: string | null; material: string | null; color: string | null }): string {
+  if (!p) return "";
+  return [p.size, p.material, p.color].filter(Boolean).join(" · ");
+}
+
 const cartLines = computed(() =>
   cart.value.map((c) => {
     const p = productById.value.get(c.productId);
@@ -36,6 +41,7 @@ const cartLines = computed(() =>
     return {
       productId: c.productId,
       name: p?.name ?? `#${c.productId}`,
+      attrs: attrLine(p),
       unitPrice,
       quantity: c.quantity,
       lineTotal: unitPrice * c.quantity,
@@ -144,7 +150,10 @@ onMounted(async () => {
         </thead>
         <tbody>
           <tr v-for="line in cartLines" :key="line.productId">
-            <td>{{ line.name }}</td>
+            <td>
+              {{ line.name }}
+              <span v-if="line.attrs" class="block text-xs text-slate-500 dark:text-slate-400">{{ line.attrs }}</span>
+            </td>
             <td>{{ line.unitPrice.toLocaleString() }}</td>
             <td>
               <input

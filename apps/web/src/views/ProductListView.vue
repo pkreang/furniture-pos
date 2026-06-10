@@ -151,9 +151,20 @@ function initial(name: string): string {
           :class="auth.hasPermission('catalog.manage') ? 'cursor-pointer' : 'cursor-default'"
         >
           <div
-            class="aspect-[4/3] rounded-md bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40 flex items-center justify-center"
+            class="aspect-[4/3] rounded-md bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40 flex items-center justify-center overflow-hidden"
           >
-            <span class="font-serif text-5xl text-amber-700 dark:text-amber-300">
+            <img
+              v-if="p.imageUrl"
+              :src="p.imageUrl"
+              :alt="p.name"
+              loading="lazy"
+              class="w-full h-full object-cover"
+              @error="($event.target as HTMLImageElement).style.display = 'none'"
+            />
+            <span
+              v-else
+              class="font-serif text-5xl text-amber-700 dark:text-amber-300"
+            >
               {{ initial(p.name) }}
             </span>
           </div>
@@ -163,6 +174,12 @@ function initial(name: string): string {
               {{ p.name }}<span v-if="p.isSofa"> 🛋</span>
             </p>
             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ p.category?.name }}</p>
+            <p
+              v-if="[p.size, p.material, p.color].some(Boolean)"
+              class="mt-0.5 text-xs text-slate-400 dark:text-slate-500"
+            >
+              {{ [p.size, p.material, p.color].filter(Boolean).join(" · ") }}
+            </p>
           </div>
           <p class="text-lg font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
             {{ p.basePrice.toLocaleString() }}

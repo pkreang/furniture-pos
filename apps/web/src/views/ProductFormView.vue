@@ -2,8 +2,16 @@
 import { onMounted, ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { fetchProducts, createProduct, updateProduct } from "../api/products";
+import {
+  fetchProducts,
+  createProduct,
+  updateProduct,
+  uploadProductImage,
+  fetchSofaMaterials,
+  type SofaMaterial,
+} from "../api/products";
 import { fetchCategories, type Category } from "../api/categories";
+import ComboBox from "../components/ComboBox.vue";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -11,7 +19,38 @@ const router = useRouter();
 
 const editingId = computed(() => (route.params.id ? Number(route.params.id) : null));
 const categories = ref<Category[]>([]);
+const sofaMaterials = ref<SofaMaterial[]>([]);
+
+const materialNames = computed(() => sofaMaterials.value.map((m) => m.name));
+
+// Colors narrow to the picked material when it matches a known palette
+// material; otherwise (free-text material, or none) show every color.
+const colorOptions = computed(() => {
+  const picked = sofaMaterials.value.find((m) => m.name === form.value.material);
+  if (picked) return picked.colors.map((c) => c.name);
+  const seen = new Set<string>();
+  for (const m of sofaMaterials.value) for (const c of m.colors) seen.add(c.name);
+  return [...seen].sort();
+});
 const error = ref<string | null>(null);
+const uploading = ref(false);
+const uploadError = ref<string | null>(null);
+
+async function onPickFile(e: Event): Promise<void> {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  uploading.value = true;
+  uploadError.value = null;
+  try {
+    form.value.imageUrl = await uploadProductImage(file);
+  } catch (err) {
+    uploadError.value = err instanceof Error ? err.message : "อัปโหลดไม่สำเร็จ";
+  } finally {
+    uploading.value = false;
+    input.value = ""; // allow re-picking same file
+  }
+}
 
 const form = ref({
   sku: "",
@@ -19,10 +58,16 @@ const form = ref({
   categoryId: 0,
   basePrice: 0,
   isSofa: false,
+  imageUrl: "",
+  size: "",
+  material: "",
+  color: "",
 });
 
 onMounted(async () => {
-  categories.value = await fetchCategories();
+  const [cats, mats] = await Promise.all([fetchCategories(), fetchSofaMaterials()]);
+  categories.value = cats;
+  sofaMaterials.value = mats;
   if (categories.value[0]) form.value.categoryId = categories.value[0].id;
   if (editingId.value !== null) {
     const existing = (await fetchProducts()).find((p) => p.id === editingId.value);
@@ -33,6 +78,10 @@ onMounted(async () => {
         categoryId: existing.categoryId,
         basePrice: existing.basePrice,
         isSofa: existing.isSofa,
+        imageUrl: existing.imageUrl ?? "",
+        size: existing.size ?? "",
+        material: existing.material ?? "",
+        color: existing.color ?? "",
       };
     }
   }
@@ -40,6 +89,12 @@ onMounted(async () => {
 
 async function submit(): Promise<void> {
   error.value = null;
+  const trimmedUrl = form.value.imageUrl.trim();
+  const attrs = {
+    size: form.value.size.trim() || null,
+    material: form.value.material.trim() || null,
+    color: form.value.color.trim() || null,
+  };
   try {
     if (editingId.value !== null) {
       await updateProduct(editingId.value, {
@@ -47,9 +102,19 @@ async function submit(): Promise<void> {
         categoryId: form.value.categoryId,
         basePrice: form.value.basePrice,
         isSofa: form.value.isSofa,
+        imageUrl: trimmedUrl || null,
+        ...attrs,
       });
     } else {
-      await createProduct(form.value);
+      await createProduct({
+        sku: form.value.sku,
+        name: form.value.name,
+        categoryId: form.value.categoryId,
+        basePrice: form.value.basePrice,
+        isSofa: form.value.isSofa,
+        imageUrl: trimmedUrl || null,
+        ...attrs,
+      });
     }
     router.replace("/products");
   } catch (e) {
@@ -85,6 +150,57 @@ async function submit(): Promise<void> {
           <label class="flex items-center gap-2 font-normal">
             <input v-model="form.isSofa" type="checkbox" /> โซฟา
           </label>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="form-row">
+            <label>{{ t("itemSize") }}</label>
+            <input v-model="form.size" class="input" />
+          </div>
+          <div class="form-row">
+            <label>{{ t("itemMaterials") }}</label>
+            <ComboBox v-model="form.material" :options="materialNames" />
+          </div>
+          <div class="form-row">
+            <label>{{ t("itemColor") }}</label>
+            <ComboBox v-model="form.color" :options="colorOptions" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label>รูปสินค้า</label>
+          <div class="flex items-center gap-3">
+            <label
+              class="btn-secondary cursor-pointer"
+              :class="uploading ? 'opacity-60 pointer-events-none' : ''"
+            >
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                class="hidden"
+                @change="onPickFile"
+                :disabled="uploading"
+              />
+              {{ uploading ? "กำลังอัปโหลด..." : "เลือกไฟล์" }}
+            </label>
+            <span class="text-xs text-slate-500 dark:text-slate-400">หรือวาง URL ด้านล่าง</span>
+          </div>
+          <input
+            v-model="form.imageUrl"
+            type="url"
+            class="input mt-2"
+            placeholder="https://..."
+            :disabled="uploading"
+          />
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            jpeg / png / webp / gif ≤ 5 MB ผ่าน Vercel Blob หรือวาง URL จาก Imgur / Cloudinary / Drive
+          </p>
+          <p v-if="uploadError" class="text-red-600 text-sm mt-2">{{ uploadError }}</p>
+          <img
+            v-if="form.imageUrl.trim()"
+            :src="form.imageUrl.trim()"
+            alt="preview"
+            class="mt-3 w-40 h-32 object-cover rounded border border-slate-200 dark:border-slate-700"
+            @error="($event.target as HTMLImageElement).style.display = 'none'"
+          />
         </div>
         <p v-if="error" class="text-red-600 text-sm mb-3">{{ error }}</p>
         <div class="flex items-center gap-3">

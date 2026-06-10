@@ -42,6 +42,10 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
             categoryId: { type: "integer" },
             basePrice: { type: "integer", minimum: 0 },
             isSofa: { type: "boolean" },
+            imageUrl: { type: "string", nullable: true },
+            size: { type: "string", nullable: true },
+            material: { type: "string", nullable: true },
+            color: { type: "string", nullable: true },
           },
         },
       },
@@ -53,6 +57,10 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
         categoryId: number;
         basePrice: number;
         isSofa?: boolean;
+        imageUrl?: string | null;
+        size?: string | null;
+        material?: string | null;
+        color?: string | null;
       };
       try {
         const product = await prisma.product.create({
@@ -62,6 +70,10 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
             categoryId: body.categoryId,
             basePrice: body.basePrice,
             isSofa: body.isSofa ?? false,
+            imageUrl: body.imageUrl?.trim() || null,
+            size: body.size?.trim() || null,
+            material: body.material?.trim() || null,
+            color: body.color?.trim() || null,
           },
         });
         return reply.code(201).send(product);
@@ -87,16 +99,29 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
             basePrice: { type: "integer", minimum: 0 },
             isSofa: { type: "boolean" },
             isActive: { type: "boolean" },
+            imageUrl: { type: "string", nullable: true },
+            size: { type: "string", nullable: true },
+            material: { type: "string", nullable: true },
+            color: { type: "string", nullable: true },
           },
         },
       },
     },
     async (request, reply) => {
       const id = Number((request.params as { id: string }).id);
+      const body = request.body as Record<string, unknown>;
+      const data: Record<string, unknown> = { ...body };
+      // Normalise free-text fields: trim, and store null instead of "".
+      for (const field of ["imageUrl", "size", "material", "color"]) {
+        if (field in body) {
+          const raw = body[field];
+          data[field] = typeof raw === "string" ? raw.trim() || null : null;
+        }
+      }
       try {
         return await prisma.product.update({
           where: { id },
-          data: request.body as Record<string, unknown>,
+          data,
         });
       } catch (err) {
         if (isUniqueViolation(err)) {

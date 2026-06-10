@@ -71,7 +71,9 @@ onMounted(async () => {
           <div class="form-row">
             <label>{{ t("products") }}</label>
             <select v-model.number="form.productId" class="input">
-              <option v-for="p in products" :key="p.id" :value="p.id">{{ p.sku }} — {{ p.name }}</option>
+              <option v-for="p in products" :key="p.id" :value="p.id">
+                {{ p.sku }} — {{ p.name }}{{ [p.size, p.material, p.color].filter(Boolean).length ? " (" + [p.size, p.material, p.color].filter(Boolean).join(" · ") + ")" : "" }}
+              </option>
             </select>
           </div>
           <div class="form-row">
@@ -113,7 +115,15 @@ onMounted(async () => {
         </thead>
         <tbody>
           <tr v-for="tr in transfers" :key="tr.id">
-            <td>{{ tr.product.name }}</td>
+            <td>
+              {{ tr.product.name }}
+              <span
+                v-if="[tr.product.size, tr.product.material, tr.product.color].some(Boolean)"
+                class="block text-xs text-slate-500 dark:text-slate-400"
+              >
+                {{ [tr.product.size, tr.product.material, tr.product.color].filter(Boolean).join(" · ") }}
+              </span>
+            </td>
             <td>{{ tr.fromBranch.name }}</td>
             <td>{{ tr.toBranch.name }}</td>
             <td>{{ tr.quantity }}</td>
