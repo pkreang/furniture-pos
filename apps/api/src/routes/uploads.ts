@@ -37,10 +37,21 @@ export async function uploadRoutes(app: FastifyInstance): Promise<void> {
       const ext = file.filename.split(".").pop()?.toLowerCase() ?? "jpg";
       const safeName = `products/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-      const blob = await put(safeName, buffer, {
-        access: "public",
-        contentType: file.mimetype,
-      });
+      let blob;
+      try {
+        blob = await put(safeName, buffer, {
+          access: "public",
+          contentType: file.mimetype,
+        });
+      } catch (err) {
+        request.log.error(err);
+        return reply.code(502).send({
+          code: "BLOB_UPLOAD_FAILED",
+          message: `อัปโหลดไป Vercel Blob ไม่สำเร็จ: ${
+            err instanceof Error ? err.message : "unknown"
+          }`,
+        });
+      }
       return reply.send({ url: blob.url });
     },
   );
