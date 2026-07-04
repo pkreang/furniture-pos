@@ -110,6 +110,10 @@ describe("uploads routes", () => {
     await app.close();
     expect(res.statusCode).toBe(200);
     expect(res.json().url).toBe("https://blob.example/products/x.png");
+    // Images are served as plain public <img src> URLs, so the store must be
+    // public — lock the contract that we always upload with access: "public".
+    expect(putMock).toHaveBeenCalledOnce();
+    expect(putMock.mock.calls[0][2]).toMatchObject({ access: "public" });
   });
 
   it("rejects a user without catalog.manage", async () => {
