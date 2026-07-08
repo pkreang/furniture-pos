@@ -149,6 +149,34 @@ describe("checkout", () => {
     ).rejects.toMatchObject({ code: "DISCOUNT_TOO_HIGH" });
   });
 
+  it("applies a fixed-baht discount and caps it by effective percent", async () => {
+    const f = await fixture();
+    const discounted = await checkout({
+      branchId: f.branchId,
+      cashierId: f.cashierId,
+      items: [{ productId: f.productA, quantity: 1 }],
+      payments: [{ method: "CASH", amount: 850 }],
+      discountType: "AMOUNT",
+      discountValue: 150,
+      maxDiscountPercent: null,
+    });
+    expect(discounted.discountAmount).toBe(150);
+    expect(discounted.total).toBe(850);
+
+    // 300 baht off 1000 == 30%, over the 10% cap — baht can't bypass the cap.
+    await expect(
+      checkout({
+        branchId: f.branchId,
+        cashierId: f.cashierId,
+        items: [{ productId: f.productA, quantity: 1 }],
+        payments: [{ method: "CASH", amount: 700 }],
+        discountType: "AMOUNT",
+        discountValue: 300,
+        maxDiscountPercent: 10,
+      }),
+    ).rejects.toMatchObject({ code: "DISCOUNT_TOO_HIGH" });
+  });
+
   it("rejects a payment above the sale total and a zero payment", async () => {
     const f = await fixture();
     await expect(

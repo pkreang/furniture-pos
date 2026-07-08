@@ -21,6 +21,7 @@ const branchId = ref(0);
 const cart = ref<{ productId: number; quantity: number }[]>([]);
 const pickProductId = ref(0);
 const discountPercent = ref(0);
+const discountType = ref<"AMOUNT" | "PERCENT">("PERCENT");
 const paymentMethod = ref<PaymentMethod>("CASH");
 
 const customerQuery = ref("");
@@ -50,7 +51,13 @@ const cartLines = computed(() =>
 );
 
 const subtotal = computed(() => cartLines.value.reduce((s, l) => s + l.lineTotal, 0));
-const discountAmount = computed(() => Math.round((subtotal.value * discountPercent.value) / 100));
+const discountAmount = computed(() => {
+  const base = subtotal.value;
+  const value = discountPercent.value || 0;
+  if (base <= 0 || value <= 0) return 0;
+  const raw = discountType.value === "PERCENT" ? Math.round((base * value) / 100) : Math.round(value);
+  return Math.min(Math.max(raw, 0), base);
+});
 const redeem = computed(() =>
   Math.max(0, Math.min(redeemPoints.value, customer.value?.pointsBalance ?? 0)),
 );
@@ -92,7 +99,8 @@ async function submit(): Promise<void> {
       customerId: customer.value?.id,
       items: cart.value.map((c) => ({ productId: c.productId, quantity: c.quantity })),
       payments: [{ method: paymentMethod.value, amount: total.value }],
-      discountPercent: discountPercent.value || undefined,
+      discountType: discountType.value,
+      discountValue: discountPercent.value || undefined,
       redeemPoints: redeem.value || undefined,
     });
     router.push(`/sales/${sale.id}`);
@@ -193,8 +201,14 @@ onMounted(async () => {
     <div class="card mb-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="form-row mb-0">
-          <label>{{ t("discount") }} %</label>
-          <input v-model.number="discountPercent" type="number" min="0" max="100" class="input" />
+          <label>{{ t("discount") }}</label>
+          <div class="flex items-center gap-1">
+            <input v-model.number="discountPercent" type="number" min="0" class="input flex-1" />
+            <select v-model="discountType" class="input w-16 px-1">
+              <option value="AMOUNT">฿</option>
+              <option value="PERCENT">%</option>
+            </select>
+          </div>
         </div>
         <div class="form-row mb-0">
           <label>{{ t("payment") }}</label>
