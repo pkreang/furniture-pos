@@ -19,6 +19,8 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
             branchId: { type: "integer" },
             customerId: { type: "integer" },
             note: { type: "string" },
+            discountType: { type: "string", enum: ["AMOUNT", "PERCENT"] },
+            discountValue: { type: "integer", minimum: 0 },
             items: {
               type: "array",
               minItems: 1,
@@ -28,6 +30,8 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
                 properties: {
                   productId: { type: "integer" },
                   quantity: { type: "integer", minimum: 1 },
+                  discountType: { type: "string", enum: ["AMOUNT", "PERCENT"] },
+                  discountValue: { type: "integer", minimum: 0 },
                 },
               },
             },
@@ -40,7 +44,14 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
         branchId: number;
         customerId?: number;
         note?: string;
-        items: { productId: number; quantity: number }[];
+        discountType?: "AMOUNT" | "PERCENT";
+        discountValue?: number;
+        items: {
+          productId: number;
+          quantity: number;
+          discountType?: "AMOUNT" | "PERCENT";
+          discountValue?: number;
+        }[];
       };
       const user = request.user!;
       if (user.isBranchScoped && body.branchId !== user.branchId) {
@@ -54,6 +65,9 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
           createdById: user.id,
           customerId: body.customerId,
           note: body.note,
+          discountType: body.discountType,
+          discountValue: body.discountValue,
+          maxDiscountPercent: user.discountMaxPercent,
           items: body.items,
         });
         return reply.code(201).send(withVat(quotation));

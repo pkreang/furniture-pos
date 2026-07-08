@@ -90,9 +90,17 @@ onMounted(async () => {
         </table>
       </div>
       <div class="mb-4 max-w-xs">
+        <div class="flex justify-between py-1 text-slate-700 dark:text-slate-300">
+          <span>{{ t("subtotal") }}</span>
+          <span>{{ quotation.subtotal.toLocaleString() }}</span>
+        </div>
+        <div v-if="quotation.discount > 0" class="flex justify-between py-1 text-slate-700 dark:text-slate-300">
+          <span>{{ t("discount") }}</span>
+          <span>-{{ quotation.discount.toLocaleString() }}</span>
+        </div>
         <div class="flex justify-between py-1 font-semibold text-slate-900 dark:text-slate-100">
           <span>{{ t("total") }}</span>
-          <span>{{ quotation.subtotal.toLocaleString() }}</span>
+          <span>{{ (quotation.total ?? quotation.subtotal).toLocaleString() }}</span>
         </div>
         <div class="flex justify-between py-1 text-sm text-slate-500 dark:text-slate-400">
           <span>{{ t("vat") }} 7% (ในยอด)</span>
