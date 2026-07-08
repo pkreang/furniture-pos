@@ -12,6 +12,8 @@ export default {
   users: "Users",
   roles: "Roles & permissions",
   save: "Save",
+  edit: "Edit",
+  soNotEditable: "Only draft or confirmed sales orders can be edited",
   cancel: "Cancel",
   categories: "Categories",
   products: "Products",

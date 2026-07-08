@@ -63,7 +63,7 @@ const soBodySchema = {
   type: "object",
   required: ["branchId", "items"],
   properties: {
-    customerId: { type: "integer" },
+    customerId: { type: ["integer", "null"] },
     branchId: { type: "integer" },
     dueDate: { type: "string" },
     deposit: { type: "integer", minimum: 0 },

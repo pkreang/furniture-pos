@@ -193,14 +193,17 @@ onMounted(load);
           >
             {{ t("printBooking") }}
           </a>
+          <RouterLink
+            v-if="
+              auth.hasPermission('so.manage') &&
+              (so.status === 'DRAFT' || so.status === 'CONFIRMED')
+            "
+            :to="`/sales-orders/${so.id}/edit`"
+            class="btn-secondary"
+          >
+            {{ t("edit") }}
+          </RouterLink>
           <template v-if="so.status === 'DRAFT'">
-            <RouterLink
-              v-if="auth.hasPermission('so.manage')"
-              :to="`/sales-orders/${so.id}/edit`"
-              class="btn-secondary"
-            >
-              {{ t("save") }}
-            </RouterLink>
             <button
               v-if="auth.hasPermission('so.manage')"
               type="button"

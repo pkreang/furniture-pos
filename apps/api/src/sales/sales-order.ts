@@ -280,13 +280,25 @@ export async function createSalesOrder(args: CreateSoArgs): Promise<SoResult> {
   });
 }
 
-/** Replaces the line items on a draft SO and re-computes totals. */
+/**
+ * Replaces the line items on a DRAFT or CONFIRMED SO and re-computes totals.
+ * A CONFIRMED order already holds a stock reservation (via `reservedQty`), so
+ * the edit reconciles it by releasing the whole previous reservation and
+ * re-reserving the new lines — covering quantity changes, added/removed
+ * products, and branch changes. Insufficient stock rolls the edit back.
+ */
 export async function updateSalesOrder(soId: number, args: UpdateSoArgs): Promise<SoResult> {
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.salesOrder.findUnique({ where: { id: soId } });
+    const existing = await tx.salesOrder.findUnique({
+      where: { id: soId },
+      include: { items: true },
+    });
     if (!existing) throw new SoError("NOT_FOUND", "ไม่พบใบสั่งขาย");
-    if (existing.status !== "DRAFT") {
-      throw new SoError("INVALID_STATUS", "แก้ไขได้เฉพาะใบสั่งขายสถานะร่าง");
+    if (existing.status !== "DRAFT" && existing.status !== "CONFIRMED") {
+      throw new SoError(
+        "INVALID_STATUS",
+        "แก้ไขได้เฉพาะใบสั่งขายสถานะร่างหรือยืนยันแล้ว",
+      );
     }
 
     if (args.customerId !== undefined && args.customerId !== null) {
@@ -306,6 +318,30 @@ export async function updateSalesOrder(soId: number, args: UpdateSoArgs): Promis
     const totals = computeTotals(itemRows, orderDiscount);
     const deposit = args.deposit ?? existing.deposit;
     validateDeposit(deposit, totals.totalAmount);
+
+    // Reconcile the stock reservation for confirmed orders: release the old
+    // lines' hold, then re-reserve the new lines at the (possibly new) branch.
+    if (existing.status === "CONFIRMED") {
+      const newBranchId = args.branchId ?? existing.branchId;
+      for (const item of existing.items) {
+        await applyStockReservation(tx, {
+          productId: item.productId,
+          branchId: existing.branchId,
+          delta: -item.quantity,
+        });
+      }
+      try {
+        for (const item of itemRows) {
+          await applyStockReservation(tx, {
+            productId: item.productId,
+            branchId: newBranchId,
+            delta: item.quantity,
+          });
+        }
+      } catch {
+        throw new SoError("INSUFFICIENT_STOCK", "สต็อกไม่พอสำหรับการจอง");
+      }
+    }
 
     await tx.salesOrderItem.deleteMany({ where: { salesOrderId: soId } });
 

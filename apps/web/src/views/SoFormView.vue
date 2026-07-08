@@ -238,8 +238,8 @@ onMounted(async () => {
     ]);
     if (editingId.value !== null) {
       const existing = await fetchSalesOrder(editingId.value);
-      if (existing.status !== "DRAFT") {
-        error.value = t("soStatusDraft");
+      if (existing.status === "DELIVERED" || existing.status === "CANCELLED") {
+        error.value = t("soNotEditable");
       }
       existingCode.value = existing.code;
       customerId.value = existing.customerId ?? "";

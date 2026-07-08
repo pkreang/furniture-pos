@@ -193,6 +193,82 @@ describe("sales-orders routes", () => {
     expect(level?.reservedQty).toBe(0);
   });
 
+  it("edits a CONFIRMED SO and reconciles the reservation to the new qty", async () => {
+    const f = await fixture();
+    await seedStock(f.productId, f.branchId, 10);
+    const userId = await createTestUser({
+      username: "u",
+      permissions: ["so.manage", "so.view"],
+    });
+    const app = buildApp();
+    const cookies = await sessionCookie(userId);
+
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/sales-orders",
+      cookies,
+      payload: {
+        branchId: f.branchId,
+        items: [{ productId: f.productId, quantity: 3, unitPrice: 200 }],
+      },
+    });
+    const soId = created.json().id;
+    await app.inject({ method: "POST", url: `/api/sales-orders/${soId}/confirm`, cookies });
+
+    // Edit the confirmed order: bump qty 3 -> 5.
+    const patched = await app.inject({
+      method: "PATCH",
+      url: `/api/sales-orders/${soId}`,
+      cookies,
+      payload: { items: [{ productId: f.productId, quantity: 5, unitPrice: 200 }] },
+    });
+    await app.close();
+    expect(patched.statusCode).toBe(200);
+    expect(patched.json().status).toBe("CONFIRMED");
+
+    const level = await prisma.stockLevel.findUnique({
+      where: { productId_branchId: { productId: f.productId, branchId: f.branchId } },
+    });
+    // On-hand untouched; reservation re-synced from 3 to 5.
+    expect(level?.quantity).toBe(10);
+    expect(level?.reservedQty).toBe(5);
+  });
+
+  it("rejects editing a CONFIRMED SO beyond available stock and rolls back", async () => {
+    const f = await fixture();
+    await seedStock(f.productId, f.branchId, 4);
+    const userId = await createTestUser({ username: "u", permissions: ["so.manage"] });
+    const app = buildApp();
+    const cookies = await sessionCookie(userId);
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/sales-orders",
+      cookies,
+      payload: {
+        branchId: f.branchId,
+        items: [{ productId: f.productId, quantity: 3, unitPrice: 100 }],
+      },
+    });
+    const soId = created.json().id;
+    await app.inject({ method: "POST", url: `/api/sales-orders/${soId}/confirm`, cookies });
+
+    const patched = await app.inject({
+      method: "PATCH",
+      url: `/api/sales-orders/${soId}`,
+      cookies,
+      payload: { items: [{ productId: f.productId, quantity: 5, unitPrice: 100 }] },
+    });
+    await app.close();
+    expect(patched.statusCode).toBe(400);
+    expect(patched.json().code).toBe("INSUFFICIENT_STOCK");
+
+    // Rolled back: original reservation of 3 preserved, lines unchanged.
+    const level = await prisma.stockLevel.findUnique({
+      where: { productId_branchId: { productId: f.productId, branchId: f.branchId } },
+    });
+    expect(level?.reservedQty).toBe(3);
+  });
+
   it("cancels a confirmed SO and releases the reservation", async () => {
     const f = await fixture();
     await seedStock(f.productId, f.branchId, 5);
