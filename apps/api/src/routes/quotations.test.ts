@@ -43,6 +43,9 @@ describe("quotation routes", () => {
     expect(res.statusCode).toBe(201);
     expect(res.json().number).toBe("SH-Q000001");
     expect(res.json().subtotal).toBe(2000);
+    // Prices are VAT-inclusive: gross 2000 → base 1869, VAT 131 extracted for display.
+    expect(res.json().taxBase).toBe(1869);
+    expect(res.json().vatAmount).toBe(131);
   });
 
   it("rejects creating a quotation without quotations.manage", async () => {

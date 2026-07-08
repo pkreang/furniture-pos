@@ -24,6 +24,9 @@ const productById = computed(() => new Map(products.value.map((p) => [p.id, p]))
 const subtotal = computed(() =>
   lines.value.reduce((s, l) => s + (productById.value.get(l.productId)?.basePrice ?? 0) * l.quantity, 0),
 );
+// Prices are VAT-inclusive: extract VAT out of the subtotal for the preview.
+const taxBase = computed(() => Math.round(subtotal.value / 1.07));
+const vatAmount = computed(() => subtotal.value - taxBase.value);
 
 function addLine(): void {
   if (!pickProductId.value) return;
@@ -99,7 +102,20 @@ onMounted(async () => {
         </tbody>
       </table>
     </div>
-    <p class="mb-3 text-slate-800 dark:text-slate-200 font-semibold">{{ t("subtotal") }}: {{ subtotal.toLocaleString() }}</p>
+    <div class="mb-3 max-w-xs">
+      <div class="flex justify-between py-1 font-semibold text-slate-800 dark:text-slate-200">
+        <span>{{ t("total") }}</span>
+        <span>{{ subtotal.toLocaleString() }}</span>
+      </div>
+      <div class="flex justify-between py-1 text-sm text-slate-500 dark:text-slate-400">
+        <span>{{ t("vat") }} 7% (ในยอด)</span>
+        <span>{{ vatAmount.toLocaleString() }}</span>
+      </div>
+      <div class="flex justify-between py-1 text-sm text-slate-500 dark:text-slate-400">
+        <span>ฐานภาษี</span>
+        <span>{{ taxBase.toLocaleString() }}</span>
+      </div>
+    </div>
     <p v-if="error" class="text-red-600 text-sm mb-3">{{ error }}</p>
     <div class="flex items-center gap-3">
       <button type="button" :disabled="busy" class="btn-primary" @click="submit">{{ t("save") }}</button>

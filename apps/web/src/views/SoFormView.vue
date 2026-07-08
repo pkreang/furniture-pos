@@ -93,9 +93,11 @@ const linesSum = computed(() =>
     0,
   ),
 );
-const subtotal = computed(() => Math.max(0, linesSum.value - (orderDiscount.value || 0)));
-const vatAmount = computed(() => Math.round(subtotal.value * 0.07));
-const totalAmount = computed(() => subtotal.value + vatAmount.value);
+// Prices are VAT-inclusive: the net (lines − discount) is the gross incl. VAT,
+// and VAT is extracted out of it — never added on top.
+const totalAmount = computed(() => Math.max(0, linesSum.value - (orderDiscount.value || 0)));
+const taxBase = computed(() => Math.round(totalAmount.value / 1.07));
+const vatAmount = computed(() => totalAmount.value - taxBase.value);
 
 function addLine(): void {
   const first = products.value[0];
@@ -506,13 +508,17 @@ onMounted(async () => {
           <label class="mb-0 flex-1">{{ t("discount") }}</label>
           <input v-model.number="orderDiscount" type="number" min="0" class="input w-28 text-right" />
         </div>
-        <div class="flex justify-between py-1 text-slate-700 dark:text-slate-300">
-          <span>{{ t("vatAmount") }}</span>
-          <span>{{ vatAmount.toLocaleString() }}</span>
-        </div>
         <div class="flex justify-between py-2 border-t border-slate-200 dark:border-slate-700 mt-1 font-semibold text-slate-900 dark:text-slate-100">
           <span>{{ t("total") }}</span>
           <span>{{ totalAmount.toLocaleString() }}</span>
+        </div>
+        <div class="flex justify-between py-1 text-sm text-slate-500 dark:text-slate-400">
+          <span>{{ t("vat") }} 7% (ในยอด)</span>
+          <span>{{ vatAmount.toLocaleString() }}</span>
+        </div>
+        <div class="flex justify-between py-1 text-sm text-slate-500 dark:text-slate-400">
+          <span>ฐานภาษี</span>
+          <span>{{ taxBase.toLocaleString() }}</span>
         </div>
       </div>
 

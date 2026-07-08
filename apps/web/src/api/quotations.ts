@@ -17,6 +17,9 @@ export interface Quotation {
   customerId: number | null;
   status: "OPEN" | "CONVERTED";
   subtotal: number;
+  // VAT-inclusive breakdown extracted from `subtotal` on read (detail/create).
+  taxBase?: number;
+  vatAmount?: number;
   note: string | null;
   convertedSaleId: number | null;
   createdAt: string;

@@ -42,11 +42,13 @@ const lines = ref<LineRow[]>([]);
 
 const productById = computed(() => new Map(products.value.map((p) => [p.id, p])));
 
-const subtotal = computed(() =>
+// Costs are VAT-inclusive: the gross line sum is the total, and VAT is
+// extracted out of it — never added on top.
+const totalAmount = computed(() =>
   lines.value.reduce((s, l) => s + (l.unitCost || 0) * (l.orderedQty || 0), 0),
 );
-const vatAmount = computed(() => Math.round(subtotal.value * 0.07));
-const totalAmount = computed(() => subtotal.value + vatAmount.value);
+const taxBase = computed(() => Math.round(totalAmount.value / 1.07));
+const vatAmount = computed(() => totalAmount.value - taxBase.value);
 
 function addLine(): void {
   const first = products.value[0];
@@ -230,17 +232,17 @@ onMounted(async () => {
       </div>
 
       <div class="card mb-4 max-w-sm ml-auto">
-        <div class="flex justify-between py-1 text-slate-700 dark:text-slate-300">
-          <span>{{ t("subtotal") }}</span>
-          <span>{{ subtotal.toLocaleString() }}</span>
-        </div>
-        <div class="flex justify-between py-1 text-slate-700 dark:text-slate-300">
-          <span>{{ t("vatAmount") }}</span>
-          <span>{{ vatAmount.toLocaleString() }}</span>
-        </div>
-        <div class="flex justify-between py-2 border-t border-slate-200 dark:border-slate-700 mt-1 font-semibold text-slate-900 dark:text-slate-100">
+        <div class="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700 mb-1 font-semibold text-slate-900 dark:text-slate-100">
           <span>{{ t("total") }}</span>
           <span>{{ totalAmount.toLocaleString() }}</span>
+        </div>
+        <div class="flex justify-between py-1 text-sm text-slate-500 dark:text-slate-400">
+          <span>{{ t("vat") }} 7% (ในยอด)</span>
+          <span>{{ vatAmount.toLocaleString() }}</span>
+        </div>
+        <div class="flex justify-between py-1 text-sm text-slate-500 dark:text-slate-400">
+          <span>ฐานภาษี</span>
+          <span>{{ taxBase.toLocaleString() }}</span>
         </div>
       </div>
 

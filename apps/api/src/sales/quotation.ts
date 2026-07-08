@@ -2,6 +2,19 @@ import type { Prisma, PaymentMethod } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { nextNumber, formatQuotationNumber } from "./numbering.js";
 import { checkoutInTx, type CheckoutResult } from "./checkout.js";
+import { extractVat } from "./money.js";
+
+/**
+ * Decorates a quotation with its VAT-inclusive breakdown. Quotation prices are
+ * VAT-inclusive, so `subtotal` is the gross; we extract the pre-VAT `taxBase`
+ * and `vatAmount` out of it for display (never stored — computed on read).
+ */
+export function withVat<T extends { subtotal: number }>(
+  quotation: T,
+): T & { taxBase: number; vatAmount: number } {
+  const { taxBase, vatAmount } = extractVat(quotation.subtotal);
+  return { ...quotation, taxBase, vatAmount };
+}
 
 /** Raised for any quotation rule violation; `code` is a stable error code. */
 export class QuotationError extends Error {

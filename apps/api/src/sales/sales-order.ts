@@ -8,6 +8,7 @@ import type {
 } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { applyStockMovement, applyStockReservation } from "../stock/service.js";
+import { extractVat } from "./money.js";
 import { nextSoCode } from "./numbering.js";
 
 /** Raised for any sales-order rule violation; `code` is a stable error code. */
@@ -30,9 +31,6 @@ const soInclude = {
 } satisfies Prisma.SalesOrderInclude;
 
 export type SoResult = Prisma.SalesOrderGetPayload<{ include: typeof soInclude }>;
-
-/** VAT rate for sales orders, mirroring the PO convention (VAT added on top). */
-const VAT_RATE = 0.07;
 
 export interface SoItemInput {
   productId: number;
@@ -114,16 +112,17 @@ interface Totals {
 }
 
 /**
- * Computes per-line subtotals + VAT + total for a sales order. The line total
- * is `unitPrice * quantity - lineDiscount`; the SO-level `discount` is applied
- * after summing lines and before VAT. VAT is added on top (matches PO).
+ * Computes totals for a sales order. Prices are VAT-INCLUSIVE: the line total
+ * is `unitPrice * quantity - lineDiscount`, the SO-level `discount` is applied
+ * after summing lines, and the resulting `totalAmount` already contains VAT.
+ * VAT is then extracted out of that gross (never added on top), so `subtotal`
+ * is the pre-VAT tax base — matching the receipt/checkout convention.
  */
 function computeTotals(items: NormalisedItem[], orderDiscount: number): Totals {
   const linesSum = items.reduce((s, i) => s + i.lineTotal, 0);
-  const subtotal = Math.max(0, linesSum - orderDiscount);
-  const vatAmount = Math.round(subtotal * VAT_RATE);
-  const totalAmount = subtotal + vatAmount;
-  return { subtotal, vatAmount, totalAmount };
+  const totalAmount = Math.max(0, linesSum - orderDiscount);
+  const { taxBase, vatAmount } = extractVat(totalAmount);
+  return { subtotal: taxBase, vatAmount, totalAmount };
 }
 
 async function validateItems(

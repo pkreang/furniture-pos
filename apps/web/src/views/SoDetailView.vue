@@ -372,21 +372,21 @@ onMounted(load);
       </div>
 
       <div class="card mb-4 max-w-sm ml-auto">
-        <div class="flex justify-between py-1 text-slate-700 dark:text-slate-300">
-          <span>{{ t("subtotal") }}</span>
-          <span>{{ so.subtotal.toLocaleString() }}</span>
-        </div>
         <div v-if="so.discount > 0" class="flex justify-between py-1 text-slate-700 dark:text-slate-300">
           <span>{{ t("discount") }}</span>
           <span>-{{ so.discount.toLocaleString() }}</span>
         </div>
-        <div class="flex justify-between py-1 text-slate-700 dark:text-slate-300">
-          <span>{{ t("vatAmount") }}</span>
-          <span>{{ so.vatAmount.toLocaleString() }}</span>
-        </div>
         <div class="flex justify-between py-2 border-t border-slate-200 dark:border-slate-700 mt-1 font-semibold text-slate-900 dark:text-slate-100">
           <span>{{ t("total") }}</span>
           <span>{{ so.totalAmount.toLocaleString() }}</span>
+        </div>
+        <div class="flex justify-between py-1 text-sm text-slate-500 dark:text-slate-400">
+          <span>{{ t("vat") }} 7% (ในยอด)</span>
+          <span>{{ so.vatAmount.toLocaleString() }}</span>
+        </div>
+        <div class="flex justify-between py-1 text-sm text-slate-500 dark:text-slate-400">
+          <span>ฐานภาษี</span>
+          <span>{{ so.subtotal.toLocaleString() }}</span>
         </div>
       </div>
 

@@ -237,6 +237,14 @@ onMounted(async () => {
             <span class="font-semibold">{{ t("total") }}</span>
             <span>{{ money(so.totalAmount) }}</span>
           </div>
+          <div class="flex justify-between text-xs text-slate-600">
+            <span>{{ t("vat") }} 7% (ในยอด)</span>
+            <span>{{ money(so.vatAmount) }}</span>
+          </div>
+          <div class="flex justify-between mb-1 text-xs text-slate-600">
+            <span>ฐานภาษี</span>
+            <span>{{ money(so.subtotal) }}</span>
+          </div>
           <div class="flex justify-between mb-1">
             <span class="font-semibold">{{ t("deposit") }}</span>
             <span>{{ money(so.deposit) }}</span>

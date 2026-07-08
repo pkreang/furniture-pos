@@ -59,9 +59,10 @@ describe("sales-orders routes", () => {
     expect(res.statusCode).toBe(201);
     const body = res.json();
     expect(body.status).toBe("DRAFT");
-    expect(body.subtotal).toBe(1000);
-    expect(body.vatAmount).toBe(70);
-    expect(body.totalAmount).toBe(1070);
+    // Prices are VAT-inclusive: gross 1000 → base 935, VAT 65 extracted from it.
+    expect(body.subtotal).toBe(935);
+    expect(body.vatAmount).toBe(65);
+    expect(body.totalAmount).toBe(1000);
     expect(body.code).toMatch(/^SO-\d{4}-\d{4}$/);
     expect(body.items).toHaveLength(1);
     expect(body.items[0].lineTotal).toBe(1000);
