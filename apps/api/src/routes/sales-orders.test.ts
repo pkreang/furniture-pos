@@ -68,6 +68,81 @@ describe("sales-orders routes", () => {
     expect(body.items[0].lineTotal).toBe(1000);
   });
 
+  it("applies baht and percent discounts at line and order level", async () => {
+    const f = await fixture();
+    const userId = await createTestUser({ username: "u", permissions: ["so.manage"] });
+    const app = buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/sales-orders",
+      cookies: await sessionCookie(userId),
+      payload: {
+        branchId: f.branchId,
+        // line gross 1000, 10% line discount -> lineTotal 900
+        items: [
+          {
+            productId: f.productId,
+            quantity: 2,
+            unitPrice: 500,
+            discountType: "PERCENT",
+            discountValue: 10,
+          },
+        ],
+        // order-level 100 baht off -> total 800 (VAT-inclusive)
+        discountType: "AMOUNT",
+        discountValue: 100,
+      },
+    });
+    await app.close();
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.items[0].lineTotal).toBe(900);
+    expect(body.items[0].discount).toBe(100);
+    expect(body.discount).toBe(100);
+    expect(body.totalAmount).toBe(800);
+    expect(body.subtotal + body.vatAmount).toBe(800); // base + VAT === gross
+  });
+
+  it("enforces the role discount cap across baht and percent", async () => {
+    const f = await fixture();
+    const cashierId = await createTestUser({
+      username: "cashier",
+      permissions: ["so.manage"],
+      discountMaxPercent: 5,
+    });
+    const app = buildApp();
+    const cookies = await sessionCookie(cashierId);
+    // 10% order discount exceeds the 5% cap.
+    const pct = await app.inject({
+      method: "POST",
+      url: "/api/sales-orders",
+      cookies,
+      payload: {
+        branchId: f.branchId,
+        items: [{ productId: f.productId, quantity: 2, unitPrice: 500 }],
+        discountType: "PERCENT",
+        discountValue: 10,
+      },
+    });
+    expect(pct.statusCode).toBe(400);
+    expect(pct.json().code).toBe("DISCOUNT_TOO_HIGH");
+    // 200 baht off 1000 == 20% also exceeds the cap — can't bypass with baht.
+    const baht = await app.inject({
+      method: "POST",
+      url: "/api/sales-orders",
+      cookies,
+      payload: {
+        branchId: f.branchId,
+        items: [{ productId: f.productId, quantity: 2, unitPrice: 500 }],
+        discountType: "AMOUNT",
+        discountValue: 200,
+      },
+    });
+    await app.close();
+    expect(baht.statusCode).toBe(400);
+    expect(baht.json().code).toBe("DISCOUNT_TOO_HIGH");
+  });
+
   it("rejects creating an SO without so.manage", async () => {
     const f = await fixture();
     const viewerId = await createTestUser({ username: "v", permissions: ["so.view"] });

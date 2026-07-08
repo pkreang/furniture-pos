@@ -9,13 +9,19 @@ interface TestUserOpts {
   isBranchScoped?: boolean;
   branchId?: number | null;
   mustChangePassword?: boolean;
+  discountMaxPercent?: number | null;
 }
 
 /** Creates a role (with the given permissions) and a user, returning the user id. */
 export async function createTestUser(opts: TestUserOpts = {}): Promise<number> {
   const roleKey = opts.roleKey ?? "tester";
   const role = await prisma.role.create({
-    data: { key: roleKey, name: roleKey, isBranchScoped: opts.isBranchScoped ?? false },
+    data: {
+      key: roleKey,
+      name: roleKey,
+      isBranchScoped: opts.isBranchScoped ?? false,
+      discountMaxPercent: opts.discountMaxPercent ?? null,
+    },
   });
   for (const key of opts.permissions ?? []) {
     const perm = await prisma.permission.upsert({

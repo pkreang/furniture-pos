@@ -8,7 +8,12 @@ import type {
 } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { applyStockMovement, applyStockReservation } from "../stock/service.js";
-import { extractVat } from "./money.js";
+import {
+  extractVat,
+  resolveDiscount,
+  effectiveDiscountPercent,
+  type DiscountKind,
+} from "./money.js";
 import { nextSoCode } from "./numbering.js";
 
 /** Raised for any sales-order rule violation; `code` is a stable error code. */
@@ -36,7 +41,10 @@ export interface SoItemInput {
   productId: number;
   quantity: number;
   unitPrice: number;
+  /** Legacy fixed-baht line discount; superseded by discountType/discountValue. */
   discount?: number;
+  discountType?: DiscountKind;
+  discountValue?: number;
   size?: string | null;
   materials?: string | null;
   color?: string | null;
@@ -79,6 +87,9 @@ export interface CreateSoArgs extends SoBookingFields {
   poRef?: string;
   quotationId?: number;
   discount?: number;
+  discountType?: DiscountKind;
+  discountValue?: number;
+  maxDiscountPercent?: number | null;
   items: SoItemInput[];
 }
 
@@ -91,6 +102,9 @@ export interface UpdateSoArgs extends SoBookingFields {
   notes?: string;
   poRef?: string;
   discount?: number;
+  discountType?: DiscountKind;
+  discountValue?: number;
+  maxDiscountPercent?: number | null;
   items: SoItemInput[];
 }
 
@@ -99,6 +113,8 @@ interface NormalisedItem {
   quantity: number;
   unitPrice: number;
   discount: number;
+  discountType: DiscountKind;
+  discountValue: number;
   lineTotal: number;
   size?: string | null;
   materials?: string | null;
@@ -125,6 +141,52 @@ function computeTotals(items: NormalisedItem[], orderDiscount: number): Totals {
   return { subtotal: taxBase, vatAmount, totalAmount };
 }
 
+interface ResolvedOrderDiscount {
+  discount: number;
+  discountType: DiscountKind;
+  discountValue: number;
+}
+
+interface OrderDiscountInput {
+  discount?: number;
+  discountType?: DiscountKind;
+  discountValue?: number;
+}
+
+/**
+ * Resolves the order-level discount (baht or %) against the summed line totals,
+ * then enforces the role's percent cap on the *combined* line + order discount
+ * as a share of the gross — so a baht amount can't bypass a percent cap.
+ */
+function resolveOrderDiscount(
+  itemRows: NormalisedItem[],
+  input: OrderDiscountInput,
+  fallback: { discountType: DiscountKind; discountValue: number },
+  maxDiscountPercent: number | null | undefined,
+): ResolvedOrderDiscount {
+  const linesSum = itemRows.reduce((s, i) => s + i.lineTotal, 0);
+  const discountType =
+    input.discountType ?? (input.discount !== undefined ? "AMOUNT" : fallback.discountType);
+  const discountValue = input.discountValue ?? input.discount ?? fallback.discountValue;
+  if (discountValue < 0) {
+    throw new SoError("INVALID_DISCOUNT", "ส่วนลดท้ายบิลต้องไม่ติดลบ");
+  }
+  if (discountType === "PERCENT" && discountValue > 100) {
+    throw new SoError("INVALID_DISCOUNT", "ส่วนลดท้ายบิลต้องไม่เกิน 100%");
+  }
+  const discount = resolveDiscount(discountType, discountValue, linesSum);
+
+  if (maxDiscountPercent !== null && maxDiscountPercent !== undefined) {
+    const grossLines = itemRows.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+    const lineDiscounts = itemRows.reduce((s, i) => s + i.discount, 0);
+    const pct = effectiveDiscountPercent(lineDiscounts + discount, grossLines);
+    if (pct > maxDiscountPercent + 1e-9) {
+      throw new SoError("DISCOUNT_TOO_HIGH", `ส่วนลดเกินสิทธิ์ (สูงสุด ${maxDiscountPercent}%)`);
+    }
+  }
+  return { discount, discountType, discountValue };
+}
+
 async function validateItems(
   tx: Prisma.TransactionClient,
   items: SoItemInput[],
@@ -142,23 +204,27 @@ async function validateItems(
     if (it.unitPrice < 0) {
       throw new SoError("INVALID_PRICE", "ราคาต่อหน่วยต้องไม่ติดลบ");
     }
-    const discount = it.discount ?? 0;
-    if (discount < 0) {
+    const discountType = it.discountType ?? "AMOUNT";
+    const discountValue = it.discountValue ?? it.discount ?? 0;
+    if (discountValue < 0) {
       throw new SoError("INVALID_DISCOUNT", "ส่วนลดบรรทัดต้องไม่ติดลบ");
+    }
+    if (discountType === "PERCENT" && discountValue > 100) {
+      throw new SoError("INVALID_DISCOUNT", "ส่วนลดบรรทัดต้องไม่เกิน 100%");
     }
     const product = byId.get(it.productId);
     if (!product) {
       throw new SoError("PRODUCT_NOT_FOUND", `ไม่พบสินค้า #${it.productId}`);
     }
     const gross = it.unitPrice * it.quantity;
-    if (discount > gross) {
-      throw new SoError("INVALID_DISCOUNT", "ส่วนลดบรรทัดเกินยอดรวมของรายการ");
-    }
+    const discount = resolveDiscount(discountType, discountValue, gross);
     return {
       productId: product.id,
       quantity: it.quantity,
       unitPrice: it.unitPrice,
       discount,
+      discountType,
+      discountValue,
       lineTotal: gross - discount,
       size: it.size ?? null,
       materials: it.materials ?? null,
@@ -244,11 +310,13 @@ export async function createSalesOrder(args: CreateSoArgs): Promise<SoResult> {
     if (!branch) throw new SoError("BRANCH_NOT_FOUND", "ไม่พบสาขา");
 
     const itemRows = await validateItems(tx, args.items);
-    const orderDiscount = args.discount ?? 0;
-    if (orderDiscount < 0) {
-      throw new SoError("INVALID_DISCOUNT", "ส่วนลดท้ายบิลต้องไม่ติดลบ");
-    }
-    const totals = computeTotals(itemRows, orderDiscount);
+    const od = resolveOrderDiscount(
+      itemRows,
+      args,
+      { discountType: "AMOUNT", discountValue: 0 },
+      args.maxDiscountPercent,
+    );
+    const totals = computeTotals(itemRows, od.discount);
     const deposit = args.deposit ?? 0;
     validateDeposit(deposit, totals.totalAmount);
 
@@ -267,7 +335,9 @@ export async function createSalesOrder(args: CreateSoArgs): Promise<SoResult> {
         notes: args.notes,
         poRef: args.poRef,
         quotationId: args.quotationId,
-        discount: orderDiscount,
+        discount: od.discount,
+        discountType: od.discountType,
+        discountValue: od.discountValue,
         subtotal: totals.subtotal,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,
@@ -311,11 +381,13 @@ export async function updateSalesOrder(soId: number, args: UpdateSoArgs): Promis
     }
 
     const itemRows = await validateItems(tx, args.items);
-    const orderDiscount = args.discount ?? existing.discount;
-    if (orderDiscount < 0) {
-      throw new SoError("INVALID_DISCOUNT", "ส่วนลดท้ายบิลต้องไม่ติดลบ");
-    }
-    const totals = computeTotals(itemRows, orderDiscount);
+    const od = resolveOrderDiscount(
+      itemRows,
+      args,
+      { discountType: existing.discountType, discountValue: existing.discountValue },
+      args.maxDiscountPercent,
+    );
+    const totals = computeTotals(itemRows, od.discount);
     const deposit = args.deposit ?? existing.deposit;
     validateDeposit(deposit, totals.totalAmount);
 
@@ -357,7 +429,9 @@ export async function updateSalesOrder(soId: number, args: UpdateSoArgs): Promis
         dueDate: args.dueDate === undefined ? existing.dueDate : args.dueDate,
         notes: args.notes ?? existing.notes,
         poRef: args.poRef ?? existing.poRef,
-        discount: orderDiscount,
+        discount: od.discount,
+        discountType: od.discountType,
+        discountValue: od.discountValue,
         deposit,
         subtotal: totals.subtotal,
         vatAmount: totals.vatAmount,
@@ -510,10 +584,18 @@ export async function convertQuotationToSo(
       productId: qi.productId,
       quantity: qi.quantity,
       unitPrice: qi.unitPrice,
-      discount: 0,
-      lineTotal: qi.unitPrice * qi.quantity,
+      discount: qi.discount,
+      discountType: qi.discountType,
+      discountValue: qi.discountValue,
+      lineTotal: qi.lineTotal,
     }));
-    const totals = computeTotals(itemRows, 0);
+    const od = resolveOrderDiscount(
+      itemRows,
+      { discountType: quotation.discountType, discountValue: quotation.discountValue },
+      { discountType: "AMOUNT", discountValue: 0 },
+      null,
+    );
+    const totals = computeTotals(itemRows, od.discount);
     const deposit = args.deposit ?? 0;
     validateDeposit(deposit, totals.totalAmount);
 
@@ -531,7 +613,9 @@ export async function convertQuotationToSo(
         deposit,
         notes: args.notes,
         poRef: args.poRef,
-        discount: 0,
+        discount: od.discount,
+        discountType: od.discountType,
+        discountValue: od.discountValue,
         subtotal: totals.subtotal,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,

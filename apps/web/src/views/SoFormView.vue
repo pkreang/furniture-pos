@@ -37,15 +37,25 @@ const busy = ref(false);
 const error = ref<string | null>(null);
 const existingCode = ref<string | null>(null);
 
+type DiscountType = "AMOUNT" | "PERCENT";
+
 interface LineRow {
   productId: number;
   quantity: number;
   unitPrice: number;
   discount: number;
+  discountType: DiscountType;
   size: string;
   materials: string;
   color: string;
   expanded: boolean;
+}
+
+/** Resolves a baht/percent discount to baht, clamped to [0, base]. */
+function resolveDisc(type: DiscountType, value: number, base: number): number {
+  if (base <= 0 || value <= 0) return 0;
+  const raw = type === "PERCENT" ? Math.round((base * value) / 100) : Math.round(value);
+  return Math.min(Math.max(raw, 0), base);
 }
 
 const customerId = ref<number | "">("");
@@ -56,6 +66,7 @@ const deposit = ref<number>(0);
 const notes = ref<string>("");
 const poRef = ref<string>("");
 const orderDiscount = ref<number>(0);
+const orderDiscountType = ref<DiscountType>("AMOUNT");
 const lines = ref<LineRow[]>([]);
 
 // Booking-form fields
@@ -88,14 +99,14 @@ const balanceCardType = ref<CardType | "">("");
 const productById = computed(() => new Map(products.value.map((p) => [p.id, p])));
 
 const linesSum = computed(() =>
-  lines.value.reduce(
-    (s, l) => s + Math.max(0, (l.unitPrice || 0) * (l.quantity || 0) - (l.discount || 0)),
-    0,
-  ),
+  lines.value.reduce((s, l) => s + lineTotal(l), 0),
+);
+const orderDiscountResolved = computed(() =>
+  resolveDisc(orderDiscountType.value, orderDiscount.value || 0, linesSum.value),
 );
 // Prices are VAT-inclusive: the net (lines − discount) is the gross incl. VAT,
 // and VAT is extracted out of it — never added on top.
-const totalAmount = computed(() => Math.max(0, linesSum.value - (orderDiscount.value || 0)));
+const totalAmount = computed(() => Math.max(0, linesSum.value - orderDiscountResolved.value));
 const taxBase = computed(() => Math.round(totalAmount.value / 1.07));
 const vatAmount = computed(() => totalAmount.value - taxBase.value);
 
@@ -107,6 +118,7 @@ function addLine(): void {
     quantity: 1,
     unitPrice: first.basePrice,
     discount: 0,
+    discountType: "AMOUNT",
     size: "",
     materials: "",
     color: "",
@@ -124,7 +136,8 @@ function onProductChange(line: LineRow): void {
 }
 
 function lineTotal(l: LineRow): number {
-  return Math.max(0, (l.unitPrice || 0) * (l.quantity || 0) - (l.discount || 0));
+  const gross = (l.unitPrice || 0) * (l.quantity || 0);
+  return Math.max(0, gross - resolveDisc(l.discountType, l.discount || 0, gross));
 }
 
 function visibleBranches(): Branch[] {
@@ -178,12 +191,14 @@ async function submit(): Promise<void> {
       deposit: Number(deposit.value) || 0,
       notes: notes.value || undefined,
       poRef: poRef.value || undefined,
-      discount: Number(orderDiscount.value) || 0,
+      discountType: orderDiscountType.value,
+      discountValue: Number(orderDiscount.value) || 0,
       items: lines.value.map((l) => ({
         productId: l.productId,
         quantity: Number(l.quantity),
         unitPrice: Number(l.unitPrice),
-        discount: Number(l.discount) || 0,
+        discountType: l.discountType,
+        discountValue: Number(l.discount) || 0,
         size: l.size || null,
         materials: l.materials || null,
         color: l.color || null,
@@ -249,12 +264,14 @@ onMounted(async () => {
       deposit.value = existing.deposit;
       notes.value = existing.notes ?? "";
       poRef.value = existing.poRef ?? "";
-      orderDiscount.value = existing.discount;
+      orderDiscount.value = existing.discountValue ?? existing.discount;
+      orderDiscountType.value = existing.discountType ?? "AMOUNT";
       lines.value = (existing.items ?? []).map((it) => ({
         productId: it.productId,
         quantity: it.quantity,
         unitPrice: it.unitPrice,
-        discount: it.discount,
+        discount: it.discountValue ?? it.discount,
+        discountType: it.discountType ?? "AMOUNT",
         size: it.size ?? "",
         materials: it.materials ?? "",
         color: it.color ?? "",
@@ -446,7 +463,13 @@ onMounted(async () => {
                   <input v-model.number="l.unitPrice" type="number" min="0" class="input w-28" />
                 </td>
                 <td>
-                  <input v-model.number="l.discount" type="number" min="0" class="input w-24" />
+                  <div class="flex items-center gap-1">
+                    <input v-model.number="l.discount" type="number" min="0" class="input w-20" />
+                    <select v-model="l.discountType" class="input w-14 px-1">
+                      <option value="AMOUNT">฿</option>
+                      <option value="PERCENT">%</option>
+                    </select>
+                  </div>
                 </td>
                 <td class="text-right">{{ lineTotal(l).toLocaleString() }}</td>
                 <td class="space-x-1 whitespace-nowrap">
@@ -506,7 +529,11 @@ onMounted(async () => {
         </div>
         <div class="form-row mb-1 flex items-center justify-between gap-2">
           <label class="mb-0 flex-1">{{ t("discount") }}</label>
-          <input v-model.number="orderDiscount" type="number" min="0" class="input w-28 text-right" />
+          <input v-model.number="orderDiscount" type="number" min="0" class="input w-24 text-right" />
+          <select v-model="orderDiscountType" class="input w-14 px-1">
+            <option value="AMOUNT">฿</option>
+            <option value="PERCENT">%</option>
+          </select>
         </div>
         <div class="flex justify-between py-2 border-t border-slate-200 dark:border-slate-700 mt-1 font-semibold text-slate-900 dark:text-slate-100">
           <span>{{ t("total") }}</span>
