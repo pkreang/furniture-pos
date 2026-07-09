@@ -58,24 +58,23 @@ describe("quotation routes", () => {
       cookies: await sessionCookie(userId),
       payload: {
         branchId: f.branchId,
-        // gross 2000, 10% line discount -> lineTotal 1800
+        // gross 2000; 200฿ then 10% -> 200 off, 10% of 1800 = 180 -> net 1620
         items: [
-          { productId: f.productId, quantity: 2, discountType: "PERCENT", discountValue: 10 },
+          { productId: f.productId, quantity: 2, discountBaht: 200, discountPercent: 10 },
         ],
-        // 100 baht off the order -> total 1700 (VAT-inclusive)
-        discountType: "AMOUNT",
-        discountValue: 100,
+        // 100 baht off the order -> total 1520 (VAT-inclusive)
+        discountBaht: 100,
       },
     });
     await app.close();
     expect(res.statusCode).toBe(201);
     const body = res.json();
-    expect(body.items[0].discount).toBe(200);
-    expect(body.items[0].lineTotal).toBe(1800);
-    expect(body.subtotal).toBe(1800);
+    expect(body.items[0].discount).toBe(380);
+    expect(body.items[0].lineTotal).toBe(1620);
+    expect(body.subtotal).toBe(1620);
     expect(body.discount).toBe(100);
-    expect(body.total).toBe(1700);
-    expect(body.taxBase + body.vatAmount).toBe(1700);
+    expect(body.total).toBe(1520);
+    expect(body.taxBase + body.vatAmount).toBe(1520);
   });
 
   it("enforces the discount cap on quotations", async () => {
@@ -93,8 +92,7 @@ describe("quotation routes", () => {
       payload: {
         branchId: f.branchId,
         items: [{ productId: f.productId, quantity: 2 }],
-        discountType: "PERCENT",
-        discountValue: 10,
+        discountPercent: 10,
       },
     });
     await app.close();

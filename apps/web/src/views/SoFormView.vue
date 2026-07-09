@@ -37,25 +37,25 @@ const busy = ref(false);
 const error = ref<string | null>(null);
 const existingCode = ref<string | null>(null);
 
-type DiscountType = "AMOUNT" | "PERCENT";
-
 interface LineRow {
   productId: number;
   quantity: number;
   unitPrice: number;
-  discount: number;
-  discountType: DiscountType;
+  discountBaht: number;
+  discountPercent: number;
   size: string;
   materials: string;
   color: string;
   expanded: boolean;
 }
 
-/** Resolves a baht/percent discount to baht, clamped to [0, base]. */
-function resolveDisc(type: DiscountType, value: number, base: number): number {
-  if (base <= 0 || value <= 0) return 0;
-  const raw = type === "PERCENT" ? Math.round((base * value) / 100) : Math.round(value);
-  return Math.min(Math.max(raw, 0), base);
+/** Net after a baht discount first, then a percent off the remainder. */
+function discountedNet(base: number, baht: number, percent: number): number {
+  if (base <= 0) return 0;
+  const amt = Math.min(Math.max(Math.round(baht || 0), 0), base);
+  const after = base - amt;
+  const pct = Math.min(Math.max(percent || 0, 0), 100);
+  return after - Math.round((after * pct) / 100);
 }
 
 const customerId = ref<number | "">("");
@@ -65,8 +65,8 @@ const dueDate = ref<string>("");
 const deposit = ref<number>(0);
 const notes = ref<string>("");
 const poRef = ref<string>("");
-const orderDiscount = ref<number>(0);
-const orderDiscountType = ref<DiscountType>("AMOUNT");
+const orderDiscountBaht = ref<number>(0);
+const orderDiscountPercent = ref<number>(0);
 const lines = ref<LineRow[]>([]);
 
 // Booking-form fields
@@ -101,12 +101,11 @@ const productById = computed(() => new Map(products.value.map((p) => [p.id, p]))
 const linesSum = computed(() =>
   lines.value.reduce((s, l) => s + lineTotal(l), 0),
 );
-const orderDiscountResolved = computed(() =>
-  resolveDisc(orderDiscountType.value, orderDiscount.value || 0, linesSum.value),
+// Prices are VAT-inclusive: apply the order discount (baht then %) to the net,
+// then VAT is extracted out of it — never added on top.
+const totalAmount = computed(() =>
+  discountedNet(linesSum.value, orderDiscountBaht.value, orderDiscountPercent.value),
 );
-// Prices are VAT-inclusive: the net (lines − discount) is the gross incl. VAT,
-// and VAT is extracted out of it — never added on top.
-const totalAmount = computed(() => Math.max(0, linesSum.value - orderDiscountResolved.value));
 const taxBase = computed(() => Math.round(totalAmount.value / 1.07));
 const vatAmount = computed(() => totalAmount.value - taxBase.value);
 
@@ -117,8 +116,8 @@ function addLine(): void {
     productId: first.id,
     quantity: 1,
     unitPrice: first.basePrice,
-    discount: 0,
-    discountType: "AMOUNT",
+    discountBaht: 0,
+    discountPercent: 0,
     size: "",
     materials: "",
     color: "",
@@ -137,7 +136,7 @@ function onProductChange(line: LineRow): void {
 
 function lineTotal(l: LineRow): number {
   const gross = (l.unitPrice || 0) * (l.quantity || 0);
-  return Math.max(0, gross - resolveDisc(l.discountType, l.discount || 0, gross));
+  return discountedNet(gross, l.discountBaht, l.discountPercent);
 }
 
 function visibleBranches(): Branch[] {
@@ -191,14 +190,14 @@ async function submit(): Promise<void> {
       deposit: Number(deposit.value) || 0,
       notes: notes.value || undefined,
       poRef: poRef.value || undefined,
-      discountType: orderDiscountType.value,
-      discountValue: Number(orderDiscount.value) || 0,
+      discountBaht: Number(orderDiscountBaht.value) || 0,
+      discountPercent: Number(orderDiscountPercent.value) || 0,
       items: lines.value.map((l) => ({
         productId: l.productId,
         quantity: Number(l.quantity),
         unitPrice: Number(l.unitPrice),
-        discountType: l.discountType,
-        discountValue: Number(l.discount) || 0,
+        discountBaht: Number(l.discountBaht) || 0,
+        discountPercent: Number(l.discountPercent) || 0,
         size: l.size || null,
         materials: l.materials || null,
         color: l.color || null,
@@ -264,14 +263,14 @@ onMounted(async () => {
       deposit.value = existing.deposit;
       notes.value = existing.notes ?? "";
       poRef.value = existing.poRef ?? "";
-      orderDiscount.value = existing.discountValue ?? existing.discount;
-      orderDiscountType.value = existing.discountType ?? "AMOUNT";
+      orderDiscountBaht.value = existing.discountBaht ?? 0;
+      orderDiscountPercent.value = existing.discountPercent ?? 0;
       lines.value = (existing.items ?? []).map((it) => ({
         productId: it.productId,
         quantity: it.quantity,
         unitPrice: it.unitPrice,
-        discount: it.discountValue ?? it.discount,
-        discountType: it.discountType ?? "AMOUNT",
+        discountBaht: it.discountBaht ?? 0,
+        discountPercent: it.discountPercent ?? 0,
         size: it.size ?? "",
         materials: it.materials ?? "",
         color: it.color ?? "",
@@ -464,11 +463,10 @@ onMounted(async () => {
                 </td>
                 <td>
                   <div class="flex items-center gap-1">
-                    <input v-model.number="l.discount" type="number" min="0" class="input w-20" />
-                    <select v-model="l.discountType" class="input w-14 px-1">
-                      <option value="AMOUNT">฿</option>
-                      <option value="PERCENT">%</option>
-                    </select>
+                    <input v-model.number="l.discountBaht" type="number" min="0" class="input w-16" title="ส่วนลดบาท" />
+                    <span class="text-xs text-slate-400">฿</span>
+                    <input v-model.number="l.discountPercent" type="number" min="0" max="100" class="input w-14" title="ส่วนลด %" />
+                    <span class="text-xs text-slate-400">%</span>
                   </div>
                 </td>
                 <td class="text-right">{{ lineTotal(l).toLocaleString() }}</td>
@@ -528,12 +526,12 @@ onMounted(async () => {
           <span>{{ linesSum.toLocaleString() }}</span>
         </div>
         <div class="form-row mb-1 flex items-center justify-between gap-2">
-          <label class="mb-0 flex-1">{{ t("discount") }}</label>
-          <input v-model.number="orderDiscount" type="number" min="0" class="input w-24 text-right" />
-          <select v-model="orderDiscountType" class="input w-14 px-1">
-            <option value="AMOUNT">฿</option>
-            <option value="PERCENT">%</option>
-          </select>
+          <label class="mb-0 flex-1">{{ t("discount") }} ฿</label>
+          <input v-model.number="orderDiscountBaht" type="number" min="0" class="input w-24 text-right" />
+        </div>
+        <div class="form-row mb-1 flex items-center justify-between gap-2">
+          <label class="mb-0 flex-1">{{ t("discount") }} %</label>
+          <input v-model.number="orderDiscountPercent" type="number" min="0" max="100" class="input w-24 text-right" />
         </div>
         <div class="flex justify-between py-2 border-t border-slate-200 dark:border-slate-700 mt-1 font-semibold text-slate-900 dark:text-slate-100">
           <span>{{ t("total") }}</span>

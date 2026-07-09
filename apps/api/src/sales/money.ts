@@ -12,23 +12,31 @@ export function calcPointsEarned(amountPaid: number): number {
   return Math.floor(amountPaid * POINTS_PER_BAHT);
 }
 
-export type DiscountKind = "AMOUNT" | "PERCENT";
+export interface DiscountResult {
+  /** Total baht taken off the base. */
+  discount: number;
+  /** Base after the discount (base − discount). */
+  net: number;
+}
 
 /**
- * Resolves a discount expressed as either a fixed baht amount or a percentage
- * into a baht figure, clamped to `[0, base]` so it can never exceed the amount
- * being discounted or go negative.
+ * Applies a two-part discount: a fixed baht amount FIRST, then a percentage of
+ * the remainder. Both are clamped so the result never goes below zero. e.g.
+ * base 1000, 100 baht then 10% → 100 off, then 10% of 900 = 90 → net 810.
  */
-export function resolveDiscount(type: DiscountKind, value: number, base: number): number {
-  if (base <= 0 || value <= 0) return 0;
-  const raw = type === "PERCENT" ? Math.round((base * value) / 100) : Math.round(value);
-  return Math.min(Math.max(raw, 0), base);
+export function applyDiscount(base: number, baht: number, percent: number): DiscountResult {
+  if (base <= 0) return { discount: 0, net: 0 };
+  const amt = Math.min(Math.max(Math.round(baht), 0), base);
+  const afterAmount = base - amt;
+  const pct = Math.min(Math.max(percent, 0), 100);
+  const pctCut = Math.round((afterAmount * pct) / 100);
+  const net = afterAmount - pctCut;
+  return { discount: base - net, net };
 }
 
 /**
  * The effective percentage a resolved baht discount represents of its base —
- * used to enforce the role's percent discount cap uniformly, whether the user
- * entered a percentage or a baht amount.
+ * used to enforce the role's percent discount cap uniformly.
  */
 export function effectiveDiscountPercent(resolved: number, base: number): number {
   if (base <= 0) return 0;

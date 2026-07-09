@@ -12,9 +12,8 @@ interface CheckoutBody {
   customerId?: number;
   items: { productId: number; quantity: number }[];
   payments: { method: "CASH" | "TRANSFER" | "CARD"; amount: number }[];
+  discountBaht?: number;
   discountPercent?: number;
-  discountType?: "AMOUNT" | "PERCENT";
-  discountValue?: number;
   redeemPoints?: number;
 }
 
@@ -30,9 +29,8 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
           properties: {
             branchId: { type: "integer" },
             customerId: { type: "integer" },
-            discountPercent: { type: "number", minimum: 0, maximum: 100 },
-            discountType: { type: "string", enum: ["AMOUNT", "PERCENT"] },
-            discountValue: { type: "integer", minimum: 0 },
+            discountBaht: { type: "integer", minimum: 0 },
+            discountPercent: { type: "integer", minimum: 0, maximum: 100 },
             redeemPoints: { type: "integer", minimum: 0 },
             items: {
               type: "array",
@@ -77,9 +75,8 @@ export async function saleRoutes(app: FastifyInstance): Promise<void> {
           customerId: body.customerId,
           items: body.items,
           payments: body.payments,
+          discountBaht: body.discountBaht,
           discountPercent: body.discountPercent,
-          discountType: body.discountType,
-          discountValue: body.discountValue,
           redeemPoints: body.redeemPoints,
           maxDiscountPercent: user.discountMaxPercent,
         });

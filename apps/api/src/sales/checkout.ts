@@ -5,9 +5,8 @@ import { applyPointTransaction } from "../membership/points.js";
 import {
   extractVat,
   calcPointsEarned,
-  resolveDiscount,
+  applyDiscount,
   effectiveDiscountPercent,
-  type DiscountKind,
 } from "./money.js";
 import { nextNumber, formatSaleNumber } from "./numbering.js";
 
@@ -37,10 +36,9 @@ export interface CheckoutArgs {
   customerId?: number;
   items: CheckoutItem[];
   payments: CheckoutPayment[];
-  /** Legacy percent discount; superseded by discountType/discountValue. */
+  /** Order-level discount: baht taken off first, then percent off the rest. */
+  discountBaht?: number;
   discountPercent?: number;
-  discountType?: DiscountKind;
-  discountValue?: number;
   redeemPoints?: number;
   /** The cashier's role discount cap; `null` means unlimited. */
   maxDiscountPercent: number | null;
@@ -75,14 +73,14 @@ export async function checkoutInTx(
   tx: Prisma.TransactionClient,
   args: CheckoutArgs,
 ): Promise<CheckoutResult> {
-  const discountType: DiscountKind = args.discountType ?? "PERCENT";
-  const discountValue = args.discountValue ?? args.discountPercent ?? 0;
+  const discountBaht = args.discountBaht ?? 0;
+  const discountPercent = args.discountPercent ?? 0;
   const redeemPoints = args.redeemPoints ?? 0;
 
   if (args.items.length === 0) {
     throw new CheckoutError("EMPTY_CART", "ไม่มีสินค้าในตะกร้า");
   }
-  if (discountValue < 0 || (discountType === "PERCENT" && discountValue > 100)) {
+  if (discountBaht < 0 || discountPercent < 0 || discountPercent > 100) {
     throw new CheckoutError("DISCOUNT_TOO_HIGH", "ส่วนลดไม่ถูกต้อง");
   }
   if (redeemPoints < 0) {
@@ -125,7 +123,7 @@ export async function checkoutInTx(
     });
 
     const subtotal = itemRows.reduce((sum, r) => sum + r.lineTotal, 0);
-    const discountAmount = resolveDiscount(discountType, discountValue, subtotal);
+    const { discount: discountAmount } = applyDiscount(subtotal, discountBaht, discountPercent);
     if (
       args.maxDiscountPercent !== null &&
       effectiveDiscountPercent(discountAmount, subtotal) > args.maxDiscountPercent + 1e-9
@@ -159,8 +157,8 @@ export async function checkoutInTx(
         cashierId: args.cashierId,
         subtotal,
         discountAmount,
-        discountType,
-        discountValue,
+        discountBaht,
+        discountPercent,
         pointsRedeemed: redeemPoints,
         total,
         outstanding,

@@ -370,12 +370,6 @@ enum CardType {
   OTHER
 }
 
-/// Whether a discount value is a fixed baht amount or a percentage.
-enum DiscountType {
-  AMOUNT
-  PERCENT
-}
-
 model SalesOrder {
   id                 Int              @id @default(autoincrement())
   code               String           @unique
@@ -387,8 +381,8 @@ model SalesOrder {
   deliveredDate      DateTime?        @map("delivered_date")
   subtotal           Int              @default(0)
   discount           Int              @default(0)
-  discountType       DiscountType     @default(AMOUNT) @map("discount_type")
-  discountValue      Int              @default(0) @map("discount_value")
+  discountBaht       Int              @default(0) @map("discount_baht")
+  discountPercent    Int              @default(0) @map("discount_percent")
   vatAmount          Int              @default(0) @map("vat_amount")
   totalAmount        Int              @default(0) @map("total_amount")
   deposit            Int              @default(0)
@@ -430,6 +424,7 @@ model SalesOrder {
   items       SalesOrderItem[]
   movements   StockMovement[]
 
+  @@index([salespersonId])
   @@map("sales_orders")
 }
 
@@ -440,8 +435,8 @@ model SalesOrderItem {
   quantity      Int
   unitPrice     Int          @map("unit_price")
   discount      Int          @default(0)
-  discountType  DiscountType @default(AMOUNT) @map("discount_type")
-  discountValue Int          @default(0) @map("discount_value")
+  discountBaht  Int          @default(0) @map("discount_baht")
+  discountPercent Int        @default(0) @map("discount_percent")
   lineTotal     Int          @map("line_total")
   size         String?
   materials    String?
@@ -519,8 +514,8 @@ model Sale {
   status         SaleStatus @default(COMPLETED)
   subtotal       Int
   discountAmount Int          @default(0) @map("discount_amount")
-  discountType   DiscountType @default(PERCENT) @map("discount_type")
-  discountValue  Int          @default(0) @map("discount_value")
+  discountBaht   Int          @default(0) @map("discount_baht")
+  discountPercent Int         @default(0) @map("discount_percent")
   pointsRedeemed Int        @default(0) @map("points_redeemed")
   total          Int
   outstanding    Int        @default(0)
@@ -556,8 +551,8 @@ model Quotation {
   status          QuotationStatus @default(OPEN)
   subtotal        Int
   discount        Int             @default(0)
-  discountType    DiscountType    @default(AMOUNT) @map("discount_type")
-  discountValue   Int             @default(0) @map("discount_value")
+  discountBaht    Int             @default(0) @map("discount_baht")
+  discountPercent Int             @default(0) @map("discount_percent")
   note            String?
   convertedSaleId Int?            @unique @map("converted_sale_id")
   createdAt       DateTime        @default(now()) @map("created_at")
@@ -580,8 +575,8 @@ model QuotationItem {
   unitPrice     Int          @map("unit_price")
   quantity      Int
   discount      Int          @default(0)
-  discountType  DiscountType @default(AMOUNT) @map("discount_type")
-  discountValue Int          @default(0) @map("discount_value")
+  discountBaht  Int          @default(0) @map("discount_baht")
+  discountPercent Int        @default(0) @map("discount_percent")
   lineTotal     Int          @map("line_total")
 
   quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)

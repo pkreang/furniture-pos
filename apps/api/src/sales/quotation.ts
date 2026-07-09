@@ -2,12 +2,7 @@ import type { Prisma, PaymentMethod } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { nextNumber, formatQuotationNumber } from "./numbering.js";
 import { checkoutInTx, type CheckoutResult } from "./checkout.js";
-import {
-  extractVat,
-  resolveDiscount,
-  effectiveDiscountPercent,
-  type DiscountKind,
-} from "./money.js";
+import { extractVat, applyDiscount, effectiveDiscountPercent } from "./money.js";
 
 /**
  * Decorates a quotation with its VAT-inclusive breakdown. Quotation prices are
@@ -44,8 +39,8 @@ export type QuotationResult = Prisma.QuotationGetPayload<{ include: typeof quota
 interface QuotationItemInput {
   productId: number;
   quantity: number;
-  discountType?: DiscountKind;
-  discountValue?: number;
+  discountBaht?: number;
+  discountPercent?: number;
 }
 
 interface CreateQuotationArgs {
@@ -54,14 +49,16 @@ interface CreateQuotationArgs {
   customerId?: number;
   items: QuotationItemInput[];
   note?: string;
-  discountType?: DiscountKind;
-  discountValue?: number;
+  discountBaht?: number;
+  discountPercent?: number;
   maxDiscountPercent?: number | null;
 }
 
-function validateDiscountValue(type: DiscountKind, value: number): void {
-  if (value < 0) throw new QuotationError("INVALID_DISCOUNT", "ส่วนลดต้องไม่ติดลบ");
-  if (type === "PERCENT" && value > 100) {
+function validateDiscount(baht: number, percent: number): void {
+  if (baht < 0 || percent < 0) {
+    throw new QuotationError("INVALID_DISCOUNT", "ส่วนลดต้องไม่ติดลบ");
+  }
+  if (percent > 100) {
     throw new QuotationError("INVALID_DISCOUNT", "ส่วนลดต้องไม่เกิน 100%");
   }
 }
@@ -85,28 +82,28 @@ export async function createQuotation(args: CreateQuotationArgs): Promise<Quotat
       if (!product) {
         throw new QuotationError("PRODUCT_NOT_FOUND", `ไม่พบสินค้า #${item.productId}`);
       }
-      const discountType = item.discountType ?? "AMOUNT";
-      const discountValue = item.discountValue ?? 0;
-      validateDiscountValue(discountType, discountValue);
+      const discountBaht = item.discountBaht ?? 0;
+      const discountPercent = item.discountPercent ?? 0;
+      validateDiscount(discountBaht, discountPercent);
       const gross = product.basePrice * item.quantity;
-      const discount = resolveDiscount(discountType, discountValue, gross);
+      const { discount, net } = applyDiscount(gross, discountBaht, discountPercent);
       return {
         productId: product.id,
         productName: product.name,
         unitPrice: product.basePrice,
         quantity: item.quantity,
         discount,
-        discountType,
-        discountValue,
-        lineTotal: gross - discount,
+        discountBaht,
+        discountPercent,
+        lineTotal: net,
       };
     });
     const subtotal = itemRows.reduce((sum, r) => sum + r.lineTotal, 0);
 
-    const orderType = args.discountType ?? "AMOUNT";
-    const orderValue = args.discountValue ?? 0;
-    validateDiscountValue(orderType, orderValue);
-    const orderDiscount = resolveDiscount(orderType, orderValue, subtotal);
+    const orderBaht = args.discountBaht ?? 0;
+    const orderPercent = args.discountPercent ?? 0;
+    validateDiscount(orderBaht, orderPercent);
+    const { discount: orderDiscount } = applyDiscount(subtotal, orderBaht, orderPercent);
 
     if (args.maxDiscountPercent !== null && args.maxDiscountPercent !== undefined) {
       const grossLines = itemRows.reduce((s, r) => s + r.unitPrice * r.quantity, 0);
@@ -129,8 +126,8 @@ export async function createQuotation(args: CreateQuotationArgs): Promise<Quotat
         createdById: args.createdById,
         subtotal,
         discount: orderDiscount,
-        discountType: orderType,
-        discountValue: orderValue,
+        discountBaht: orderBaht,
+        discountPercent: orderPercent,
         note: args.note,
         items: { create: itemRows },
       },

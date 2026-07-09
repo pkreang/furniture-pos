@@ -8,12 +8,7 @@ import type {
 } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { applyStockMovement, applyStockReservation } from "../stock/service.js";
-import {
-  extractVat,
-  resolveDiscount,
-  effectiveDiscountPercent,
-  type DiscountKind,
-} from "./money.js";
+import { extractVat, applyDiscount, effectiveDiscountPercent } from "./money.js";
 import { nextSoCode } from "./numbering.js";
 
 /** Raised for any sales-order rule violation; `code` is a stable error code. */
@@ -41,10 +36,9 @@ export interface SoItemInput {
   productId: number;
   quantity: number;
   unitPrice: number;
-  /** Legacy fixed-baht line discount; superseded by discountType/discountValue. */
-  discount?: number;
-  discountType?: DiscountKind;
-  discountValue?: number;
+  /** Fixed baht taken off the line first, then the percent off the remainder. */
+  discountBaht?: number;
+  discountPercent?: number;
   size?: string | null;
   materials?: string | null;
   color?: string | null;
@@ -86,9 +80,8 @@ export interface CreateSoArgs extends SoBookingFields {
   notes?: string;
   poRef?: string;
   quotationId?: number;
-  discount?: number;
-  discountType?: DiscountKind;
-  discountValue?: number;
+  discountBaht?: number;
+  discountPercent?: number;
   maxDiscountPercent?: number | null;
   items: SoItemInput[];
 }
@@ -101,9 +94,8 @@ export interface UpdateSoArgs extends SoBookingFields {
   deposit?: number;
   notes?: string;
   poRef?: string;
-  discount?: number;
-  discountType?: DiscountKind;
-  discountValue?: number;
+  discountBaht?: number;
+  discountPercent?: number;
   maxDiscountPercent?: number | null;
   items: SoItemInput[];
 }
@@ -113,8 +105,8 @@ interface NormalisedItem {
   quantity: number;
   unitPrice: number;
   discount: number;
-  discountType: DiscountKind;
-  discountValue: number;
+  discountBaht: number;
+  discountPercent: number;
   lineTotal: number;
   size?: string | null;
   materials?: string | null;
@@ -143,38 +135,36 @@ function computeTotals(items: NormalisedItem[], orderDiscount: number): Totals {
 
 interface ResolvedOrderDiscount {
   discount: number;
-  discountType: DiscountKind;
-  discountValue: number;
+  discountBaht: number;
+  discountPercent: number;
 }
 
 interface OrderDiscountInput {
-  discount?: number;
-  discountType?: DiscountKind;
-  discountValue?: number;
+  discountBaht?: number;
+  discountPercent?: number;
 }
 
 /**
- * Resolves the order-level discount (baht or %) against the summed line totals,
- * then enforces the role's percent cap on the *combined* line + order discount
- * as a share of the gross — so a baht amount can't bypass a percent cap.
+ * Resolves the order-level discount (baht first, then percent of the remainder)
+ * against the summed line totals, then enforces the role's percent cap on the
+ * *combined* line + order discount as a share of the gross.
  */
 function resolveOrderDiscount(
   itemRows: NormalisedItem[],
   input: OrderDiscountInput,
-  fallback: { discountType: DiscountKind; discountValue: number },
+  fallback: { discountBaht: number; discountPercent: number },
   maxDiscountPercent: number | null | undefined,
 ): ResolvedOrderDiscount {
   const linesSum = itemRows.reduce((s, i) => s + i.lineTotal, 0);
-  const discountType =
-    input.discountType ?? (input.discount !== undefined ? "AMOUNT" : fallback.discountType);
-  const discountValue = input.discountValue ?? input.discount ?? fallback.discountValue;
-  if (discountValue < 0) {
+  const discountBaht = input.discountBaht ?? fallback.discountBaht;
+  const discountPercent = input.discountPercent ?? fallback.discountPercent;
+  if (discountBaht < 0 || discountPercent < 0) {
     throw new SoError("INVALID_DISCOUNT", "ส่วนลดท้ายบิลต้องไม่ติดลบ");
   }
-  if (discountType === "PERCENT" && discountValue > 100) {
+  if (discountPercent > 100) {
     throw new SoError("INVALID_DISCOUNT", "ส่วนลดท้ายบิลต้องไม่เกิน 100%");
   }
-  const discount = resolveDiscount(discountType, discountValue, linesSum);
+  const { discount } = applyDiscount(linesSum, discountBaht, discountPercent);
 
   if (maxDiscountPercent !== null && maxDiscountPercent !== undefined) {
     const grossLines = itemRows.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
@@ -184,7 +174,7 @@ function resolveOrderDiscount(
       throw new SoError("DISCOUNT_TOO_HIGH", `ส่วนลดเกินสิทธิ์ (สูงสุด ${maxDiscountPercent}%)`);
     }
   }
-  return { discount, discountType, discountValue };
+  return { discount, discountBaht, discountPercent };
 }
 
 async function validateItems(
@@ -204,12 +194,12 @@ async function validateItems(
     if (it.unitPrice < 0) {
       throw new SoError("INVALID_PRICE", "ราคาต่อหน่วยต้องไม่ติดลบ");
     }
-    const discountType = it.discountType ?? "AMOUNT";
-    const discountValue = it.discountValue ?? it.discount ?? 0;
-    if (discountValue < 0) {
+    const discountBaht = it.discountBaht ?? 0;
+    const discountPercent = it.discountPercent ?? 0;
+    if (discountBaht < 0 || discountPercent < 0) {
       throw new SoError("INVALID_DISCOUNT", "ส่วนลดบรรทัดต้องไม่ติดลบ");
     }
-    if (discountType === "PERCENT" && discountValue > 100) {
+    if (discountPercent > 100) {
       throw new SoError("INVALID_DISCOUNT", "ส่วนลดบรรทัดต้องไม่เกิน 100%");
     }
     const product = byId.get(it.productId);
@@ -217,15 +207,15 @@ async function validateItems(
       throw new SoError("PRODUCT_NOT_FOUND", `ไม่พบสินค้า #${it.productId}`);
     }
     const gross = it.unitPrice * it.quantity;
-    const discount = resolveDiscount(discountType, discountValue, gross);
+    const { discount, net } = applyDiscount(gross, discountBaht, discountPercent);
     return {
       productId: product.id,
       quantity: it.quantity,
       unitPrice: it.unitPrice,
       discount,
-      discountType,
-      discountValue,
-      lineTotal: gross - discount,
+      discountBaht,
+      discountPercent,
+      lineTotal: net,
       size: it.size ?? null,
       materials: it.materials ?? null,
       color: it.color ?? null,
@@ -313,7 +303,7 @@ export async function createSalesOrder(args: CreateSoArgs): Promise<SoResult> {
     const od = resolveOrderDiscount(
       itemRows,
       args,
-      { discountType: "AMOUNT", discountValue: 0 },
+      { discountBaht: 0, discountPercent: 0 },
       args.maxDiscountPercent,
     );
     const totals = computeTotals(itemRows, od.discount);
@@ -336,8 +326,8 @@ export async function createSalesOrder(args: CreateSoArgs): Promise<SoResult> {
         poRef: args.poRef,
         quotationId: args.quotationId,
         discount: od.discount,
-        discountType: od.discountType,
-        discountValue: od.discountValue,
+        discountBaht: od.discountBaht,
+        discountPercent: od.discountPercent,
         subtotal: totals.subtotal,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,
@@ -384,7 +374,7 @@ export async function updateSalesOrder(soId: number, args: UpdateSoArgs): Promis
     const od = resolveOrderDiscount(
       itemRows,
       args,
-      { discountType: existing.discountType, discountValue: existing.discountValue },
+      { discountBaht: existing.discountBaht, discountPercent: existing.discountPercent },
       args.maxDiscountPercent,
     );
     const totals = computeTotals(itemRows, od.discount);
@@ -430,8 +420,8 @@ export async function updateSalesOrder(soId: number, args: UpdateSoArgs): Promis
         notes: args.notes ?? existing.notes,
         poRef: args.poRef ?? existing.poRef,
         discount: od.discount,
-        discountType: od.discountType,
-        discountValue: od.discountValue,
+        discountBaht: od.discountBaht,
+        discountPercent: od.discountPercent,
         deposit,
         subtotal: totals.subtotal,
         vatAmount: totals.vatAmount,
@@ -585,14 +575,14 @@ export async function convertQuotationToSo(
       quantity: qi.quantity,
       unitPrice: qi.unitPrice,
       discount: qi.discount,
-      discountType: qi.discountType,
-      discountValue: qi.discountValue,
+      discountBaht: qi.discountBaht,
+      discountPercent: qi.discountPercent,
       lineTotal: qi.lineTotal,
     }));
     const od = resolveOrderDiscount(
       itemRows,
-      { discountType: quotation.discountType, discountValue: quotation.discountValue },
-      { discountType: "AMOUNT", discountValue: 0 },
+      { discountBaht: quotation.discountBaht, discountPercent: quotation.discountPercent },
+      { discountBaht: 0, discountPercent: 0 },
       null,
     );
     const totals = computeTotals(itemRows, od.discount);
@@ -614,8 +604,8 @@ export async function convertQuotationToSo(
         notes: args.notes,
         poRef: args.poRef,
         discount: od.discount,
-        discountType: od.discountType,
-        discountValue: od.discountValue,
+        discountBaht: od.discountBaht,
+        discountPercent: od.discountPercent,
         subtotal: totals.subtotal,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,

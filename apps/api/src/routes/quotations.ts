@@ -19,8 +19,8 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
             branchId: { type: "integer" },
             customerId: { type: "integer" },
             note: { type: "string" },
-            discountType: { type: "string", enum: ["AMOUNT", "PERCENT"] },
-            discountValue: { type: "integer", minimum: 0 },
+            discountBaht: { type: "integer", minimum: 0 },
+            discountPercent: { type: "integer", minimum: 0, maximum: 100 },
             items: {
               type: "array",
               minItems: 1,
@@ -30,8 +30,8 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
                 properties: {
                   productId: { type: "integer" },
                   quantity: { type: "integer", minimum: 1 },
-                  discountType: { type: "string", enum: ["AMOUNT", "PERCENT"] },
-                  discountValue: { type: "integer", minimum: 0 },
+                  discountBaht: { type: "integer", minimum: 0 },
+                  discountPercent: { type: "integer", minimum: 0, maximum: 100 },
                 },
               },
             },
@@ -44,13 +44,13 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
         branchId: number;
         customerId?: number;
         note?: string;
-        discountType?: "AMOUNT" | "PERCENT";
-        discountValue?: number;
+        discountBaht?: number;
+        discountPercent?: number;
         items: {
           productId: number;
           quantity: number;
-          discountType?: "AMOUNT" | "PERCENT";
-          discountValue?: number;
+          discountBaht?: number;
+          discountPercent?: number;
         }[];
       };
       const user = request.user!;
@@ -65,8 +65,8 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
           createdById: user.id,
           customerId: body.customerId,
           note: body.note,
-          discountType: body.discountType,
-          discountValue: body.discountValue,
+          discountBaht: body.discountBaht,
+          discountPercent: body.discountPercent,
           maxDiscountPercent: user.discountMaxPercent,
           items: body.items,
         });
