@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { applyStockMovement } from "../stock/service.js";
+import { extractVat } from "../sales/money.js";
 import { nextPoCode } from "../sales/numbering.js";
 
 /** Raised for any purchase-order rule violation; `code` is a stable error code. */
@@ -20,9 +21,6 @@ const poInclude = {
 } satisfies Prisma.PurchaseOrderInclude;
 
 export type POResult = Prisma.PurchaseOrderGetPayload<{ include: typeof poInclude }>;
-
-/** VAT rate for purchase orders, mirrored from sales tax handling. */
-const VAT_RATE = 0.07;
 
 export interface PoItemInput {
   productId: number;
@@ -48,19 +46,19 @@ export interface UpdatePOArgs {
 }
 
 /**
- * Computes subtotal/VAT/total from a list of priced items. VAT is added on top
- * of the subtotal (PO totals are gross), matching the convention chosen for
- * purchase orders (note: sales extract VAT from a tax-inclusive total instead).
+ * Computes subtotal/VAT/total from a list of priced items. Costs are
+ * VAT-INCLUSIVE: `totalAmount` is the gross sum and VAT is extracted out of it
+ * (never added on top), so `subtotal` is the pre-VAT tax base — matching the
+ * receipt/sales-order convention.
  */
 function computeTotals(items: { unitCost: number; orderedQty: number }[]): {
   subtotal: number;
   vatAmount: number;
   totalAmount: number;
 } {
-  const subtotal = items.reduce((s, i) => s + i.unitCost * i.orderedQty, 0);
-  const vatAmount = Math.round(subtotal * VAT_RATE);
-  const totalAmount = subtotal + vatAmount;
-  return { subtotal, vatAmount, totalAmount };
+  const totalAmount = items.reduce((s, i) => s + i.unitCost * i.orderedQty, 0);
+  const { taxBase, vatAmount } = extractVat(totalAmount);
+  return { subtotal: taxBase, vatAmount, totalAmount };
 }
 
 async function validateItems(

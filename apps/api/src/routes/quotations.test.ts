@@ -43,6 +43,63 @@ describe("quotation routes", () => {
     expect(res.statusCode).toBe(201);
     expect(res.json().number).toBe("SH-Q000001");
     expect(res.json().subtotal).toBe(2000);
+    // Prices are VAT-inclusive: gross 2000 → base 1869, VAT 131 extracted for display.
+    expect(res.json().taxBase).toBe(1869);
+    expect(res.json().vatAmount).toBe(131);
+  });
+
+  it("applies line and order discounts (baht/percent) to a quotation", async () => {
+    const f = await fixture();
+    const userId = await createTestUser({ username: "u", permissions: ["quotations.manage"] });
+    const app = buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/quotations",
+      cookies: await sessionCookie(userId),
+      payload: {
+        branchId: f.branchId,
+        // gross 2000, 10% line discount -> lineTotal 1800
+        items: [
+          { productId: f.productId, quantity: 2, discountType: "PERCENT", discountValue: 10 },
+        ],
+        // 100 baht off the order -> total 1700 (VAT-inclusive)
+        discountType: "AMOUNT",
+        discountValue: 100,
+      },
+    });
+    await app.close();
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.items[0].discount).toBe(200);
+    expect(body.items[0].lineTotal).toBe(1800);
+    expect(body.subtotal).toBe(1800);
+    expect(body.discount).toBe(100);
+    expect(body.total).toBe(1700);
+    expect(body.taxBase + body.vatAmount).toBe(1700);
+  });
+
+  it("enforces the discount cap on quotations", async () => {
+    const f = await fixture();
+    const cashierId = await createTestUser({
+      username: "cashier",
+      permissions: ["quotations.manage"],
+      discountMaxPercent: 5,
+    });
+    const app = buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/quotations",
+      cookies: await sessionCookie(cashierId),
+      payload: {
+        branchId: f.branchId,
+        items: [{ productId: f.productId, quantity: 2 }],
+        discountType: "PERCENT",
+        discountValue: 10,
+      },
+    });
+    await app.close();
+    expect(res.statusCode).toBe(400);
+    expect(res.json().code).toBe("DISCOUNT_TOO_HIGH");
   });
 
   it("rejects creating a quotation without quotations.manage", async () => {

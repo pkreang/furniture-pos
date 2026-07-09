@@ -2,6 +2,26 @@ import type { Prisma, PaymentMethod } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { nextNumber, formatQuotationNumber } from "./numbering.js";
 import { checkoutInTx, type CheckoutResult } from "./checkout.js";
+import {
+  extractVat,
+  resolveDiscount,
+  effectiveDiscountPercent,
+  type DiscountKind,
+} from "./money.js";
+
+/**
+ * Decorates a quotation with its VAT-inclusive breakdown. Quotation prices are
+ * VAT-inclusive; the net (line subtotal − order discount) is the gross, out of
+ * which we extract the pre-VAT `taxBase` and `vatAmount` for display (never
+ * stored — computed on read).
+ */
+export function withVat<T extends { subtotal: number; discount?: number }>(
+  quotation: T,
+): T & { total: number; taxBase: number; vatAmount: number } {
+  const total = Math.max(0, quotation.subtotal - (quotation.discount ?? 0));
+  const { taxBase, vatAmount } = extractVat(total);
+  return { ...quotation, total, taxBase, vatAmount };
+}
 
 /** Raised for any quotation rule violation; `code` is a stable error code. */
 export class QuotationError extends Error {
@@ -21,12 +41,29 @@ const quotationInclude = {
 
 export type QuotationResult = Prisma.QuotationGetPayload<{ include: typeof quotationInclude }>;
 
+interface QuotationItemInput {
+  productId: number;
+  quantity: number;
+  discountType?: DiscountKind;
+  discountValue?: number;
+}
+
 interface CreateQuotationArgs {
   branchId: number;
   createdById: number;
   customerId?: number;
-  items: { productId: number; quantity: number }[];
+  items: QuotationItemInput[];
   note?: string;
+  discountType?: DiscountKind;
+  discountValue?: number;
+  maxDiscountPercent?: number | null;
+}
+
+function validateDiscountValue(type: DiscountKind, value: number): void {
+  if (value < 0) throw new QuotationError("INVALID_DISCOUNT", "ส่วนลดต้องไม่ติดลบ");
+  if (type === "PERCENT" && value > 100) {
+    throw new QuotationError("INVALID_DISCOUNT", "ส่วนลดต้องไม่เกิน 100%");
+  }
 }
 
 /** Creates a quotation, snapshotting current product prices. Touches no stock. */
@@ -48,15 +85,40 @@ export async function createQuotation(args: CreateQuotationArgs): Promise<Quotat
       if (!product) {
         throw new QuotationError("PRODUCT_NOT_FOUND", `ไม่พบสินค้า #${item.productId}`);
       }
+      const discountType = item.discountType ?? "AMOUNT";
+      const discountValue = item.discountValue ?? 0;
+      validateDiscountValue(discountType, discountValue);
+      const gross = product.basePrice * item.quantity;
+      const discount = resolveDiscount(discountType, discountValue, gross);
       return {
         productId: product.id,
         productName: product.name,
         unitPrice: product.basePrice,
         quantity: item.quantity,
-        lineTotal: product.basePrice * item.quantity,
+        discount,
+        discountType,
+        discountValue,
+        lineTotal: gross - discount,
       };
     });
     const subtotal = itemRows.reduce((sum, r) => sum + r.lineTotal, 0);
+
+    const orderType = args.discountType ?? "AMOUNT";
+    const orderValue = args.discountValue ?? 0;
+    validateDiscountValue(orderType, orderValue);
+    const orderDiscount = resolveDiscount(orderType, orderValue, subtotal);
+
+    if (args.maxDiscountPercent !== null && args.maxDiscountPercent !== undefined) {
+      const grossLines = itemRows.reduce((s, r) => s + r.unitPrice * r.quantity, 0);
+      const lineDiscounts = itemRows.reduce((s, r) => s + r.discount, 0);
+      const pct = effectiveDiscountPercent(lineDiscounts + orderDiscount, grossLines);
+      if (pct > args.maxDiscountPercent + 1e-9) {
+        throw new QuotationError(
+          "DISCOUNT_TOO_HIGH",
+          `ส่วนลดเกินสิทธิ์ (สูงสุด ${args.maxDiscountPercent}%)`,
+        );
+      }
+    }
 
     const seq = await nextNumber(tx, branch.id, "quote");
     const quotation = await tx.quotation.create({
@@ -66,6 +128,9 @@ export async function createQuotation(args: CreateQuotationArgs): Promise<Quotat
         customerId: args.customerId,
         createdById: args.createdById,
         subtotal,
+        discount: orderDiscount,
+        discountType: orderType,
+        discountValue: orderValue,
         note: args.note,
         items: { create: itemRows },
       },

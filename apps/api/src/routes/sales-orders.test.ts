@@ -59,12 +59,88 @@ describe("sales-orders routes", () => {
     expect(res.statusCode).toBe(201);
     const body = res.json();
     expect(body.status).toBe("DRAFT");
-    expect(body.subtotal).toBe(1000);
-    expect(body.vatAmount).toBe(70);
-    expect(body.totalAmount).toBe(1070);
+    // Prices are VAT-inclusive: gross 1000 → base 935, VAT 65 extracted from it.
+    expect(body.subtotal).toBe(935);
+    expect(body.vatAmount).toBe(65);
+    expect(body.totalAmount).toBe(1000);
     expect(body.code).toMatch(/^SO-\d{4}-\d{4}$/);
     expect(body.items).toHaveLength(1);
     expect(body.items[0].lineTotal).toBe(1000);
+  });
+
+  it("applies baht and percent discounts at line and order level", async () => {
+    const f = await fixture();
+    const userId = await createTestUser({ username: "u", permissions: ["so.manage"] });
+    const app = buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/sales-orders",
+      cookies: await sessionCookie(userId),
+      payload: {
+        branchId: f.branchId,
+        // line gross 1000, 10% line discount -> lineTotal 900
+        items: [
+          {
+            productId: f.productId,
+            quantity: 2,
+            unitPrice: 500,
+            discountType: "PERCENT",
+            discountValue: 10,
+          },
+        ],
+        // order-level 100 baht off -> total 800 (VAT-inclusive)
+        discountType: "AMOUNT",
+        discountValue: 100,
+      },
+    });
+    await app.close();
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.items[0].lineTotal).toBe(900);
+    expect(body.items[0].discount).toBe(100);
+    expect(body.discount).toBe(100);
+    expect(body.totalAmount).toBe(800);
+    expect(body.subtotal + body.vatAmount).toBe(800); // base + VAT === gross
+  });
+
+  it("enforces the role discount cap across baht and percent", async () => {
+    const f = await fixture();
+    const cashierId = await createTestUser({
+      username: "cashier",
+      permissions: ["so.manage"],
+      discountMaxPercent: 5,
+    });
+    const app = buildApp();
+    const cookies = await sessionCookie(cashierId);
+    // 10% order discount exceeds the 5% cap.
+    const pct = await app.inject({
+      method: "POST",
+      url: "/api/sales-orders",
+      cookies,
+      payload: {
+        branchId: f.branchId,
+        items: [{ productId: f.productId, quantity: 2, unitPrice: 500 }],
+        discountType: "PERCENT",
+        discountValue: 10,
+      },
+    });
+    expect(pct.statusCode).toBe(400);
+    expect(pct.json().code).toBe("DISCOUNT_TOO_HIGH");
+    // 200 baht off 1000 == 20% also exceeds the cap — can't bypass with baht.
+    const baht = await app.inject({
+      method: "POST",
+      url: "/api/sales-orders",
+      cookies,
+      payload: {
+        branchId: f.branchId,
+        items: [{ productId: f.productId, quantity: 2, unitPrice: 500 }],
+        discountType: "AMOUNT",
+        discountValue: 200,
+      },
+    });
+    await app.close();
+    expect(baht.statusCode).toBe(400);
+    expect(baht.json().code).toBe("DISCOUNT_TOO_HIGH");
   });
 
   it("rejects creating an SO without so.manage", async () => {
@@ -190,6 +266,82 @@ describe("sales-orders routes", () => {
     });
     expect(level?.quantity).toBe(6);
     expect(level?.reservedQty).toBe(0);
+  });
+
+  it("edits a CONFIRMED SO and reconciles the reservation to the new qty", async () => {
+    const f = await fixture();
+    await seedStock(f.productId, f.branchId, 10);
+    const userId = await createTestUser({
+      username: "u",
+      permissions: ["so.manage", "so.view"],
+    });
+    const app = buildApp();
+    const cookies = await sessionCookie(userId);
+
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/sales-orders",
+      cookies,
+      payload: {
+        branchId: f.branchId,
+        items: [{ productId: f.productId, quantity: 3, unitPrice: 200 }],
+      },
+    });
+    const soId = created.json().id;
+    await app.inject({ method: "POST", url: `/api/sales-orders/${soId}/confirm`, cookies });
+
+    // Edit the confirmed order: bump qty 3 -> 5.
+    const patched = await app.inject({
+      method: "PATCH",
+      url: `/api/sales-orders/${soId}`,
+      cookies,
+      payload: { items: [{ productId: f.productId, quantity: 5, unitPrice: 200 }] },
+    });
+    await app.close();
+    expect(patched.statusCode).toBe(200);
+    expect(patched.json().status).toBe("CONFIRMED");
+
+    const level = await prisma.stockLevel.findUnique({
+      where: { productId_branchId: { productId: f.productId, branchId: f.branchId } },
+    });
+    // On-hand untouched; reservation re-synced from 3 to 5.
+    expect(level?.quantity).toBe(10);
+    expect(level?.reservedQty).toBe(5);
+  });
+
+  it("rejects editing a CONFIRMED SO beyond available stock and rolls back", async () => {
+    const f = await fixture();
+    await seedStock(f.productId, f.branchId, 4);
+    const userId = await createTestUser({ username: "u", permissions: ["so.manage"] });
+    const app = buildApp();
+    const cookies = await sessionCookie(userId);
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/sales-orders",
+      cookies,
+      payload: {
+        branchId: f.branchId,
+        items: [{ productId: f.productId, quantity: 3, unitPrice: 100 }],
+      },
+    });
+    const soId = created.json().id;
+    await app.inject({ method: "POST", url: `/api/sales-orders/${soId}/confirm`, cookies });
+
+    const patched = await app.inject({
+      method: "PATCH",
+      url: `/api/sales-orders/${soId}`,
+      cookies,
+      payload: { items: [{ productId: f.productId, quantity: 5, unitPrice: 100 }] },
+    });
+    await app.close();
+    expect(patched.statusCode).toBe(400);
+    expect(patched.json().code).toBe("INSUFFICIENT_STOCK");
+
+    // Rolled back: original reservation of 3 preserved, lines unchanged.
+    const level = await prisma.stockLevel.findUnique({
+      where: { productId_branchId: { productId: f.productId, branchId: f.branchId } },
+    });
+    expect(level?.reservedQty).toBe(3);
   });
 
   it("cancels a confirmed SO and releases the reservation", async () => {

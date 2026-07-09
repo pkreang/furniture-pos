@@ -55,6 +55,8 @@ export interface CheckoutInput {
   items: { productId: number; quantity: number }[];
   payments: { method: PaymentMethod; amount: number }[];
   discountPercent?: number;
+  discountType?: "AMOUNT" | "PERCENT";
+  discountValue?: number;
   redeemPoints?: number;
 }
 

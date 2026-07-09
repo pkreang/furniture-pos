@@ -2,7 +2,13 @@ import type { Prisma, PaymentMethod, TaxInvoiceType } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { applyStockMovement } from "../stock/service.js";
 import { applyPointTransaction } from "../membership/points.js";
-import { extractVat, calcPointsEarned } from "./money.js";
+import {
+  extractVat,
+  calcPointsEarned,
+  resolveDiscount,
+  effectiveDiscountPercent,
+  type DiscountKind,
+} from "./money.js";
 import { nextNumber, formatSaleNumber } from "./numbering.js";
 
 /** Raised for any checkout rule violation; `code` is a stable error code. */
@@ -31,7 +37,10 @@ export interface CheckoutArgs {
   customerId?: number;
   items: CheckoutItem[];
   payments: CheckoutPayment[];
+  /** Legacy percent discount; superseded by discountType/discountValue. */
   discountPercent?: number;
+  discountType?: DiscountKind;
+  discountValue?: number;
   redeemPoints?: number;
   /** The cashier's role discount cap; `null` means unlimited. */
   maxDiscountPercent: number | null;
@@ -66,20 +75,15 @@ export async function checkoutInTx(
   tx: Prisma.TransactionClient,
   args: CheckoutArgs,
 ): Promise<CheckoutResult> {
-  const discountPercent = args.discountPercent ?? 0;
+  const discountType: DiscountKind = args.discountType ?? "PERCENT";
+  const discountValue = args.discountValue ?? args.discountPercent ?? 0;
   const redeemPoints = args.redeemPoints ?? 0;
 
   if (args.items.length === 0) {
     throw new CheckoutError("EMPTY_CART", "ไม่มีสินค้าในตะกร้า");
   }
-  if (discountPercent < 0 || discountPercent > 100) {
+  if (discountValue < 0 || (discountType === "PERCENT" && discountValue > 100)) {
     throw new CheckoutError("DISCOUNT_TOO_HIGH", "ส่วนลดไม่ถูกต้อง");
-  }
-  if (args.maxDiscountPercent !== null && discountPercent > args.maxDiscountPercent) {
-    throw new CheckoutError(
-      "DISCOUNT_TOO_HIGH",
-      `ส่วนลดเกินสิทธิ์ (สูงสุด ${args.maxDiscountPercent}%)`,
-    );
   }
   if (redeemPoints < 0) {
     throw new CheckoutError("INVALID_REDEEM", "แต้มที่ใช้ไม่ถูกต้อง");
@@ -121,7 +125,16 @@ export async function checkoutInTx(
     });
 
     const subtotal = itemRows.reduce((sum, r) => sum + r.lineTotal, 0);
-    const discountAmount = Math.round((subtotal * discountPercent) / 100);
+    const discountAmount = resolveDiscount(discountType, discountValue, subtotal);
+    if (
+      args.maxDiscountPercent !== null &&
+      effectiveDiscountPercent(discountAmount, subtotal) > args.maxDiscountPercent + 1e-9
+    ) {
+      throw new CheckoutError(
+        "DISCOUNT_TOO_HIGH",
+        `ส่วนลดเกินสิทธิ์ (สูงสุด ${args.maxDiscountPercent}%)`,
+      );
+    }
     const total = subtotal - discountAmount - redeemPoints;
     if (total < 0) throw new CheckoutError("NEGATIVE_TOTAL", "ยอดสุทธิติดลบ");
 
@@ -146,6 +159,8 @@ export async function checkoutInTx(
         cashierId: args.cashierId,
         subtotal,
         discountAmount,
+        discountType,
+        discountValue,
         pointsRedeemed: redeemPoints,
         total,
         outstanding,

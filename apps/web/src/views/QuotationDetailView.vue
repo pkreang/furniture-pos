@@ -89,7 +89,28 @@ onMounted(async () => {
           </tbody>
         </table>
       </div>
-      <p class="mb-4 text-slate-800 dark:text-slate-200 font-semibold">{{ t("subtotal") }}: {{ quotation.subtotal.toLocaleString() }}</p>
+      <div class="mb-4 max-w-xs">
+        <div class="flex justify-between py-1 text-slate-700 dark:text-slate-300">
+          <span>{{ t("subtotal") }}</span>
+          <span>{{ quotation.subtotal.toLocaleString() }}</span>
+        </div>
+        <div v-if="quotation.discount > 0" class="flex justify-between py-1 text-slate-700 dark:text-slate-300">
+          <span>{{ t("discount") }}</span>
+          <span>-{{ quotation.discount.toLocaleString() }}</span>
+        </div>
+        <div class="flex justify-between py-1 font-semibold text-slate-900 dark:text-slate-100">
+          <span>{{ t("total") }}</span>
+          <span>{{ (quotation.total ?? quotation.subtotal).toLocaleString() }}</span>
+        </div>
+        <div class="flex justify-between py-1 text-sm text-slate-500 dark:text-slate-400">
+          <span>{{ t("vat") }} 7% (ในยอด)</span>
+          <span>{{ (quotation.vatAmount ?? 0).toLocaleString() }}</span>
+        </div>
+        <div class="flex justify-between py-1 text-sm text-slate-500 dark:text-slate-400">
+          <span>ฐานภาษี</span>
+          <span>{{ (quotation.taxBase ?? 0).toLocaleString() }}</span>
+        </div>
+      </div>
 
       <div class="flex flex-wrap items-center gap-3 mb-4">
         <button

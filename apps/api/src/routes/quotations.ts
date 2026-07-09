@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "../prisma.js";
 import { branchFilter } from "../auth/branch-scope.js";
-import { createQuotation, convertQuotation, QuotationError } from "../sales/quotation.js";
+import { createQuotation, convertQuotation, withVat, QuotationError } from "../sales/quotation.js";
 import { CheckoutError } from "../sales/checkout.js";
 import { StockError } from "../stock/service.js";
 import { PointError } from "../membership/points.js";
@@ -19,6 +19,8 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
             branchId: { type: "integer" },
             customerId: { type: "integer" },
             note: { type: "string" },
+            discountType: { type: "string", enum: ["AMOUNT", "PERCENT"] },
+            discountValue: { type: "integer", minimum: 0 },
             items: {
               type: "array",
               minItems: 1,
@@ -28,6 +30,8 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
                 properties: {
                   productId: { type: "integer" },
                   quantity: { type: "integer", minimum: 1 },
+                  discountType: { type: "string", enum: ["AMOUNT", "PERCENT"] },
+                  discountValue: { type: "integer", minimum: 0 },
                 },
               },
             },
@@ -40,7 +44,14 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
         branchId: number;
         customerId?: number;
         note?: string;
-        items: { productId: number; quantity: number }[];
+        discountType?: "AMOUNT" | "PERCENT";
+        discountValue?: number;
+        items: {
+          productId: number;
+          quantity: number;
+          discountType?: "AMOUNT" | "PERCENT";
+          discountValue?: number;
+        }[];
       };
       const user = request.user!;
       if (user.isBranchScoped && body.branchId !== user.branchId) {
@@ -54,9 +65,12 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
           createdById: user.id,
           customerId: body.customerId,
           note: body.note,
+          discountType: body.discountType,
+          discountValue: body.discountValue,
+          maxDiscountPercent: user.discountMaxPercent,
           items: body.items,
         });
-        return reply.code(201).send(quotation);
+        return reply.code(201).send(withVat(quotation));
       } catch (err) {
         if (err instanceof QuotationError) {
           return reply.code(400).send({ code: err.code, message: err.message });
@@ -98,7 +112,7 @@ export async function quotationRoutes(app: FastifyInstance): Promise<void> {
       if (!quotation) {
         return reply.code(404).send({ code: "NOT_FOUND", message: "ไม่พบใบเสนอราคา" });
       }
-      return quotation;
+      return withVat(quotation);
     },
   );
 

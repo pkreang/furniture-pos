@@ -12,6 +12,8 @@ export default {
   users: "ผู้ใช้",
   roles: "บทบาทและสิทธิ์",
   save: "บันทึก",
+  edit: "แก้ไข",
+  soNotEditable: "แก้ไขได้เฉพาะใบสั่งขายสถานะร่างหรือยืนยันแล้ว",
   cancel: "ยกเลิก",
   categories: "หมวดหมู่",
   products: "สินค้า",

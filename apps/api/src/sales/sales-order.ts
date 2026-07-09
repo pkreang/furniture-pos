@@ -8,6 +8,12 @@ import type {
 } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import { applyStockMovement, applyStockReservation } from "../stock/service.js";
+import {
+  extractVat,
+  resolveDiscount,
+  effectiveDiscountPercent,
+  type DiscountKind,
+} from "./money.js";
 import { nextSoCode } from "./numbering.js";
 
 /** Raised for any sales-order rule violation; `code` is a stable error code. */
@@ -31,14 +37,14 @@ const soInclude = {
 
 export type SoResult = Prisma.SalesOrderGetPayload<{ include: typeof soInclude }>;
 
-/** VAT rate for sales orders, mirroring the PO convention (VAT added on top). */
-const VAT_RATE = 0.07;
-
 export interface SoItemInput {
   productId: number;
   quantity: number;
   unitPrice: number;
+  /** Legacy fixed-baht line discount; superseded by discountType/discountValue. */
   discount?: number;
+  discountType?: DiscountKind;
+  discountValue?: number;
   size?: string | null;
   materials?: string | null;
   color?: string | null;
@@ -81,6 +87,9 @@ export interface CreateSoArgs extends SoBookingFields {
   poRef?: string;
   quotationId?: number;
   discount?: number;
+  discountType?: DiscountKind;
+  discountValue?: number;
+  maxDiscountPercent?: number | null;
   items: SoItemInput[];
 }
 
@@ -93,6 +102,9 @@ export interface UpdateSoArgs extends SoBookingFields {
   notes?: string;
   poRef?: string;
   discount?: number;
+  discountType?: DiscountKind;
+  discountValue?: number;
+  maxDiscountPercent?: number | null;
   items: SoItemInput[];
 }
 
@@ -101,6 +113,8 @@ interface NormalisedItem {
   quantity: number;
   unitPrice: number;
   discount: number;
+  discountType: DiscountKind;
+  discountValue: number;
   lineTotal: number;
   size?: string | null;
   materials?: string | null;
@@ -114,16 +128,63 @@ interface Totals {
 }
 
 /**
- * Computes per-line subtotals + VAT + total for a sales order. The line total
- * is `unitPrice * quantity - lineDiscount`; the SO-level `discount` is applied
- * after summing lines and before VAT. VAT is added on top (matches PO).
+ * Computes totals for a sales order. Prices are VAT-INCLUSIVE: the line total
+ * is `unitPrice * quantity - lineDiscount`, the SO-level `discount` is applied
+ * after summing lines, and the resulting `totalAmount` already contains VAT.
+ * VAT is then extracted out of that gross (never added on top), so `subtotal`
+ * is the pre-VAT tax base — matching the receipt/checkout convention.
  */
 function computeTotals(items: NormalisedItem[], orderDiscount: number): Totals {
   const linesSum = items.reduce((s, i) => s + i.lineTotal, 0);
-  const subtotal = Math.max(0, linesSum - orderDiscount);
-  const vatAmount = Math.round(subtotal * VAT_RATE);
-  const totalAmount = subtotal + vatAmount;
-  return { subtotal, vatAmount, totalAmount };
+  const totalAmount = Math.max(0, linesSum - orderDiscount);
+  const { taxBase, vatAmount } = extractVat(totalAmount);
+  return { subtotal: taxBase, vatAmount, totalAmount };
+}
+
+interface ResolvedOrderDiscount {
+  discount: number;
+  discountType: DiscountKind;
+  discountValue: number;
+}
+
+interface OrderDiscountInput {
+  discount?: number;
+  discountType?: DiscountKind;
+  discountValue?: number;
+}
+
+/**
+ * Resolves the order-level discount (baht or %) against the summed line totals,
+ * then enforces the role's percent cap on the *combined* line + order discount
+ * as a share of the gross — so a baht amount can't bypass a percent cap.
+ */
+function resolveOrderDiscount(
+  itemRows: NormalisedItem[],
+  input: OrderDiscountInput,
+  fallback: { discountType: DiscountKind; discountValue: number },
+  maxDiscountPercent: number | null | undefined,
+): ResolvedOrderDiscount {
+  const linesSum = itemRows.reduce((s, i) => s + i.lineTotal, 0);
+  const discountType =
+    input.discountType ?? (input.discount !== undefined ? "AMOUNT" : fallback.discountType);
+  const discountValue = input.discountValue ?? input.discount ?? fallback.discountValue;
+  if (discountValue < 0) {
+    throw new SoError("INVALID_DISCOUNT", "ส่วนลดท้ายบิลต้องไม่ติดลบ");
+  }
+  if (discountType === "PERCENT" && discountValue > 100) {
+    throw new SoError("INVALID_DISCOUNT", "ส่วนลดท้ายบิลต้องไม่เกิน 100%");
+  }
+  const discount = resolveDiscount(discountType, discountValue, linesSum);
+
+  if (maxDiscountPercent !== null && maxDiscountPercent !== undefined) {
+    const grossLines = itemRows.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+    const lineDiscounts = itemRows.reduce((s, i) => s + i.discount, 0);
+    const pct = effectiveDiscountPercent(lineDiscounts + discount, grossLines);
+    if (pct > maxDiscountPercent + 1e-9) {
+      throw new SoError("DISCOUNT_TOO_HIGH", `ส่วนลดเกินสิทธิ์ (สูงสุด ${maxDiscountPercent}%)`);
+    }
+  }
+  return { discount, discountType, discountValue };
 }
 
 async function validateItems(
@@ -143,23 +204,27 @@ async function validateItems(
     if (it.unitPrice < 0) {
       throw new SoError("INVALID_PRICE", "ราคาต่อหน่วยต้องไม่ติดลบ");
     }
-    const discount = it.discount ?? 0;
-    if (discount < 0) {
+    const discountType = it.discountType ?? "AMOUNT";
+    const discountValue = it.discountValue ?? it.discount ?? 0;
+    if (discountValue < 0) {
       throw new SoError("INVALID_DISCOUNT", "ส่วนลดบรรทัดต้องไม่ติดลบ");
+    }
+    if (discountType === "PERCENT" && discountValue > 100) {
+      throw new SoError("INVALID_DISCOUNT", "ส่วนลดบรรทัดต้องไม่เกิน 100%");
     }
     const product = byId.get(it.productId);
     if (!product) {
       throw new SoError("PRODUCT_NOT_FOUND", `ไม่พบสินค้า #${it.productId}`);
     }
     const gross = it.unitPrice * it.quantity;
-    if (discount > gross) {
-      throw new SoError("INVALID_DISCOUNT", "ส่วนลดบรรทัดเกินยอดรวมของรายการ");
-    }
+    const discount = resolveDiscount(discountType, discountValue, gross);
     return {
       productId: product.id,
       quantity: it.quantity,
       unitPrice: it.unitPrice,
       discount,
+      discountType,
+      discountValue,
       lineTotal: gross - discount,
       size: it.size ?? null,
       materials: it.materials ?? null,
@@ -245,11 +310,13 @@ export async function createSalesOrder(args: CreateSoArgs): Promise<SoResult> {
     if (!branch) throw new SoError("BRANCH_NOT_FOUND", "ไม่พบสาขา");
 
     const itemRows = await validateItems(tx, args.items);
-    const orderDiscount = args.discount ?? 0;
-    if (orderDiscount < 0) {
-      throw new SoError("INVALID_DISCOUNT", "ส่วนลดท้ายบิลต้องไม่ติดลบ");
-    }
-    const totals = computeTotals(itemRows, orderDiscount);
+    const od = resolveOrderDiscount(
+      itemRows,
+      args,
+      { discountType: "AMOUNT", discountValue: 0 },
+      args.maxDiscountPercent,
+    );
+    const totals = computeTotals(itemRows, od.discount);
     const deposit = args.deposit ?? 0;
     validateDeposit(deposit, totals.totalAmount);
 
@@ -268,7 +335,9 @@ export async function createSalesOrder(args: CreateSoArgs): Promise<SoResult> {
         notes: args.notes,
         poRef: args.poRef,
         quotationId: args.quotationId,
-        discount: orderDiscount,
+        discount: od.discount,
+        discountType: od.discountType,
+        discountValue: od.discountValue,
         subtotal: totals.subtotal,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,
@@ -281,13 +350,25 @@ export async function createSalesOrder(args: CreateSoArgs): Promise<SoResult> {
   });
 }
 
-/** Replaces the line items on a draft SO and re-computes totals. */
+/**
+ * Replaces the line items on a DRAFT or CONFIRMED SO and re-computes totals.
+ * A CONFIRMED order already holds a stock reservation (via `reservedQty`), so
+ * the edit reconciles it by releasing the whole previous reservation and
+ * re-reserving the new lines — covering quantity changes, added/removed
+ * products, and branch changes. Insufficient stock rolls the edit back.
+ */
 export async function updateSalesOrder(soId: number, args: UpdateSoArgs): Promise<SoResult> {
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.salesOrder.findUnique({ where: { id: soId } });
+    const existing = await tx.salesOrder.findUnique({
+      where: { id: soId },
+      include: { items: true },
+    });
     if (!existing) throw new SoError("NOT_FOUND", "ไม่พบใบสั่งขาย");
-    if (existing.status !== "DRAFT") {
-      throw new SoError("INVALID_STATUS", "แก้ไขได้เฉพาะใบสั่งขายสถานะร่าง");
+    if (existing.status !== "DRAFT" && existing.status !== "CONFIRMED") {
+      throw new SoError(
+        "INVALID_STATUS",
+        "แก้ไขได้เฉพาะใบสั่งขายสถานะร่างหรือยืนยันแล้ว",
+      );
     }
 
     if (args.customerId !== undefined && args.customerId !== null) {
@@ -300,13 +381,39 @@ export async function updateSalesOrder(soId: number, args: UpdateSoArgs): Promis
     }
 
     const itemRows = await validateItems(tx, args.items);
-    const orderDiscount = args.discount ?? existing.discount;
-    if (orderDiscount < 0) {
-      throw new SoError("INVALID_DISCOUNT", "ส่วนลดท้ายบิลต้องไม่ติดลบ");
-    }
-    const totals = computeTotals(itemRows, orderDiscount);
+    const od = resolveOrderDiscount(
+      itemRows,
+      args,
+      { discountType: existing.discountType, discountValue: existing.discountValue },
+      args.maxDiscountPercent,
+    );
+    const totals = computeTotals(itemRows, od.discount);
     const deposit = args.deposit ?? existing.deposit;
     validateDeposit(deposit, totals.totalAmount);
+
+    // Reconcile the stock reservation for confirmed orders: release the old
+    // lines' hold, then re-reserve the new lines at the (possibly new) branch.
+    if (existing.status === "CONFIRMED") {
+      const newBranchId = args.branchId ?? existing.branchId;
+      for (const item of existing.items) {
+        await applyStockReservation(tx, {
+          productId: item.productId,
+          branchId: existing.branchId,
+          delta: -item.quantity,
+        });
+      }
+      try {
+        for (const item of itemRows) {
+          await applyStockReservation(tx, {
+            productId: item.productId,
+            branchId: newBranchId,
+            delta: item.quantity,
+          });
+        }
+      } catch {
+        throw new SoError("INSUFFICIENT_STOCK", "สต็อกไม่พอสำหรับการจอง");
+      }
+    }
 
     await tx.salesOrderItem.deleteMany({ where: { salesOrderId: soId } });
 
@@ -322,7 +429,9 @@ export async function updateSalesOrder(soId: number, args: UpdateSoArgs): Promis
         dueDate: args.dueDate === undefined ? existing.dueDate : args.dueDate,
         notes: args.notes ?? existing.notes,
         poRef: args.poRef ?? existing.poRef,
-        discount: orderDiscount,
+        discount: od.discount,
+        discountType: od.discountType,
+        discountValue: od.discountValue,
         deposit,
         subtotal: totals.subtotal,
         vatAmount: totals.vatAmount,
@@ -475,10 +584,18 @@ export async function convertQuotationToSo(
       productId: qi.productId,
       quantity: qi.quantity,
       unitPrice: qi.unitPrice,
-      discount: 0,
-      lineTotal: qi.unitPrice * qi.quantity,
+      discount: qi.discount,
+      discountType: qi.discountType,
+      discountValue: qi.discountValue,
+      lineTotal: qi.lineTotal,
     }));
-    const totals = computeTotals(itemRows, 0);
+    const od = resolveOrderDiscount(
+      itemRows,
+      { discountType: quotation.discountType, discountValue: quotation.discountValue },
+      { discountType: "AMOUNT", discountValue: 0 },
+      null,
+    );
+    const totals = computeTotals(itemRows, od.discount);
     const deposit = args.deposit ?? 0;
     validateDeposit(deposit, totals.totalAmount);
 
@@ -496,7 +613,9 @@ export async function convertQuotationToSo(
         deposit,
         notes: args.notes,
         poRef: args.poRef,
-        discount: 0,
+        discount: od.discount,
+        discountType: od.discountType,
+        discountValue: od.discountValue,
         subtotal: totals.subtotal,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,

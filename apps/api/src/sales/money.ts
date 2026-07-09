@@ -11,3 +11,26 @@ export function extractVat(gross: number): { taxBase: number; vatAmount: number 
 export function calcPointsEarned(amountPaid: number): number {
   return Math.floor(amountPaid * POINTS_PER_BAHT);
 }
+
+export type DiscountKind = "AMOUNT" | "PERCENT";
+
+/**
+ * Resolves a discount expressed as either a fixed baht amount or a percentage
+ * into a baht figure, clamped to `[0, base]` so it can never exceed the amount
+ * being discounted or go negative.
+ */
+export function resolveDiscount(type: DiscountKind, value: number, base: number): number {
+  if (base <= 0 || value <= 0) return 0;
+  const raw = type === "PERCENT" ? Math.round((base * value) / 100) : Math.round(value);
+  return Math.min(Math.max(raw, 0), base);
+}
+
+/**
+ * The effective percentage a resolved baht discount represents of its base —
+ * used to enforce the role's percent discount cap uniformly, whether the user
+ * entered a percentage or a baht amount.
+ */
+export function effectiveDiscountPercent(resolved: number, base: number): number {
+  if (base <= 0) return 0;
+  return (resolved / base) * 100;
+}

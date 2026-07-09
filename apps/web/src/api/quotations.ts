@@ -1,12 +1,17 @@
 import { apiGet, apiSend } from "./client";
 import type { PaymentMethod, Sale } from "./sales";
 
+export type DiscountType = "AMOUNT" | "PERCENT";
+
 export interface QuotationItem {
   id: number;
   productId: number;
   productName: string;
   unitPrice: number;
   quantity: number;
+  discount: number;
+  discountType: DiscountType;
+  discountValue: number;
   lineTotal: number;
 }
 
@@ -17,6 +22,14 @@ export interface Quotation {
   customerId: number | null;
   status: "OPEN" | "CONVERTED";
   subtotal: number;
+  discount: number;
+  discountType: DiscountType;
+  discountValue: number;
+  // VAT-inclusive breakdown extracted on read (detail/create): total = subtotal
+  // − discount, with taxBase/vatAmount split out of it.
+  total?: number;
+  taxBase?: number;
+  vatAmount?: number;
   note: string | null;
   convertedSaleId: number | null;
   createdAt: string;
@@ -28,8 +41,15 @@ export interface Quotation {
 export interface QuotationInput {
   branchId: number;
   customerId?: number;
-  items: { productId: number; quantity: number }[];
+  items: {
+    productId: number;
+    quantity: number;
+    discountType?: DiscountType;
+    discountValue?: number;
+  }[];
   note?: string;
+  discountType?: DiscountType;
+  discountValue?: number;
 }
 
 export function fetchQuotations(): Promise<Quotation[]> {

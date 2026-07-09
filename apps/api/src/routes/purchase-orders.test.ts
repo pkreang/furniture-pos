@@ -43,9 +43,10 @@ describe("purchase-orders routes", () => {
     expect(res.statusCode).toBe(201);
     const body = res.json();
     expect(body.status).toBe("DRAFT");
-    expect(body.subtotal).toBe(5000);
-    expect(body.vatAmount).toBe(350);
-    expect(body.totalAmount).toBe(5350);
+    // Costs are VAT-inclusive: gross 5000 → base 4673, VAT 327 extracted from it.
+    expect(body.subtotal).toBe(4673);
+    expect(body.vatAmount).toBe(327);
+    expect(body.totalAmount).toBe(5000);
     expect(body.code).toMatch(/^PO-\d{4}-\d{4}$/);
     expect(body.items).toHaveLength(1);
     expect(body.items[0].lineTotal).toBe(5000);
@@ -191,7 +192,7 @@ describe("purchase-orders routes", () => {
     });
     await app.close();
     expect(patched.statusCode).toBe(200);
-    expect(patched.json().subtotal).toBe(500);
+    expect(patched.json().subtotal).toBe(467); // gross 500 → base (VAT-inclusive)
     expect(patched.json().items).toHaveLength(1);
     expect(patched.json().items[0].orderedQty).toBe(5);
   });
