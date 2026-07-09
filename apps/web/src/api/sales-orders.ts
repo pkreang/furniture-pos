@@ -6,7 +6,6 @@ export type SoDeliveryType = "COMPANY" | "SELF_PICKUP" | "OTHER";
 export type PaymentTerm = "DEPOSIT" | "FULL" | "INSTALLMENT";
 export type PaymentMethodKind = "CASH" | "TRANSFER" | "CREDIT_CARD";
 export type CardType = "VISA" | "MASTERCARD" | "OTHER";
-export type DiscountType = "AMOUNT" | "PERCENT";
 
 /** Structured delivery-survey answers captured on the SO. Free-form JSON
  * on the server side; the frontend layers strict typing on top. */
@@ -32,8 +31,8 @@ export interface SalesOrderItem {
   quantity: number;
   unitPrice: number;
   discount: number;
-  discountType: DiscountType;
-  discountValue: number;
+  discountBaht: number;
+  discountPercent: number;
   lineTotal: number;
   size?: string | null;
   materials?: string | null;
@@ -52,8 +51,8 @@ export interface SalesOrder {
   deliveredDate: string | null;
   subtotal: number;
   discount: number;
-  discountType: DiscountType;
-  discountValue: number;
+  discountBaht: number;
+  discountPercent: number;
   vatAmount: number;
   totalAmount: number;
   deposit: number;
@@ -107,8 +106,8 @@ export interface SoItemInput {
   quantity: number;
   unitPrice: number;
   discount?: number;
-  discountType?: DiscountType;
-  discountValue?: number;
+  discountBaht?: number;
+  discountPercent?: number;
   size?: string | null;
   materials?: string | null;
   color?: string | null;
@@ -122,8 +121,8 @@ export interface SoInput {
   notes?: string;
   poRef?: string;
   discount?: number;
-  discountType?: DiscountType;
-  discountValue?: number;
+  discountBaht?: number;
+  discountPercent?: number;
   items: SoItemInput[];
   salespersonId?: number;
   bookNo?: string | null;

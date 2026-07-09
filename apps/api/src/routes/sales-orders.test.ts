@@ -68,7 +68,7 @@ describe("sales-orders routes", () => {
     expect(body.items[0].lineTotal).toBe(1000);
   });
 
-  it("applies baht and percent discounts at line and order level", async () => {
+  it("applies baht-then-percent discounts at line and order level", async () => {
     const f = await fixture();
     const userId = await createTestUser({ username: "u", permissions: ["so.manage"] });
     const app = buildApp();
@@ -78,29 +78,29 @@ describe("sales-orders routes", () => {
       cookies: await sessionCookie(userId),
       payload: {
         branchId: f.branchId,
-        // line gross 1000, 10% line discount -> lineTotal 900
+        // line gross 1000; 100฿ then 10% -> 100 off, 10% of 900 = 90 -> net 810
         items: [
           {
             productId: f.productId,
             quantity: 2,
             unitPrice: 500,
-            discountType: "PERCENT",
-            discountValue: 10,
+            discountBaht: 100,
+            discountPercent: 10,
           },
         ],
-        // order-level 100 baht off -> total 800 (VAT-inclusive)
-        discountType: "AMOUNT",
-        discountValue: 100,
+        // order on 810; 10฿ then 10% -> 10 off, 10% of 800 = 80 -> total 720
+        discountBaht: 10,
+        discountPercent: 10,
       },
     });
     await app.close();
     expect(res.statusCode).toBe(201);
     const body = res.json();
-    expect(body.items[0].lineTotal).toBe(900);
-    expect(body.items[0].discount).toBe(100);
-    expect(body.discount).toBe(100);
-    expect(body.totalAmount).toBe(800);
-    expect(body.subtotal + body.vatAmount).toBe(800); // base + VAT === gross
+    expect(body.items[0].lineTotal).toBe(810);
+    expect(body.items[0].discount).toBe(190);
+    expect(body.discount).toBe(90); // 10 + 80
+    expect(body.totalAmount).toBe(720);
+    expect(body.subtotal + body.vatAmount).toBe(720); // base + VAT === gross
   });
 
   it("enforces the role discount cap across baht and percent", async () => {
@@ -120,8 +120,7 @@ describe("sales-orders routes", () => {
       payload: {
         branchId: f.branchId,
         items: [{ productId: f.productId, quantity: 2, unitPrice: 500 }],
-        discountType: "PERCENT",
-        discountValue: 10,
+        discountPercent: 10,
       },
     });
     expect(pct.statusCode).toBe(400);
@@ -134,8 +133,7 @@ describe("sales-orders routes", () => {
       payload: {
         branchId: f.branchId,
         items: [{ productId: f.productId, quantity: 2, unitPrice: 500 }],
-        discountType: "AMOUNT",
-        discountValue: 200,
+        discountBaht: 200,
       },
     });
     await app.close();

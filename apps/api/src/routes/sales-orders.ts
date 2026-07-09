@@ -20,8 +20,6 @@ const PAYMENT_TERMS = ["DEPOSIT", "FULL", "INSTALLMENT"] as const;
 const PAYMENT_METHOD_KINDS = ["CASH", "TRANSFER", "CREDIT_CARD"] as const;
 const CARD_TYPES = ["VISA", "MASTERCARD", "OTHER"] as const;
 
-const DISCOUNT_TYPES = ["AMOUNT", "PERCENT"] as const;
-
 const soItemSchema = {
   type: "object",
   required: ["productId", "quantity", "unitPrice"],
@@ -29,9 +27,8 @@ const soItemSchema = {
     productId: { type: "integer" },
     quantity: { type: "integer", minimum: 1 },
     unitPrice: { type: "integer", minimum: 0 },
-    discount: { type: "integer", minimum: 0 },
-    discountType: { type: "string", enum: [...DISCOUNT_TYPES] },
-    discountValue: { type: "integer", minimum: 0 },
+    discountBaht: { type: "integer", minimum: 0 },
+    discountPercent: { type: "integer", minimum: 0, maximum: 100 },
     size: { type: ["string", "null"] },
     materials: { type: ["string", "null"] },
     color: { type: ["string", "null"] },
@@ -73,9 +70,8 @@ const soBodySchema = {
     deposit: { type: "integer", minimum: 0 },
     notes: { type: "string" },
     poRef: { type: "string" },
-    discount: { type: "integer", minimum: 0 },
-    discountType: { type: "string", enum: [...DISCOUNT_TYPES] },
-    discountValue: { type: "integer", minimum: 0 },
+    discountBaht: { type: "integer", minimum: 0 },
+    discountPercent: { type: "integer", minimum: 0, maximum: 100 },
     items: { type: "array", minItems: 1, items: soItemSchema },
     salespersonId: { type: "integer" },
     ...bookingFieldProps,
@@ -92,9 +88,8 @@ const soPatchSchema = {
     deposit: { type: "integer", minimum: 0 },
     notes: { type: "string" },
     poRef: { type: "string" },
-    discount: { type: "integer", minimum: 0 },
-    discountType: { type: "string", enum: [...DISCOUNT_TYPES] },
-    discountValue: { type: "integer", minimum: 0 },
+    discountBaht: { type: "integer", minimum: 0 },
+    discountPercent: { type: "integer", minimum: 0, maximum: 100 },
     items: { type: "array", minItems: 1, items: soItemSchema },
     salespersonId: { type: "integer" },
     ...bookingFieldProps,
@@ -111,9 +106,8 @@ interface SoItemBody {
   productId: number;
   quantity: number;
   unitPrice: number;
-  discount?: number;
-  discountType?: "AMOUNT" | "PERCENT";
-  discountValue?: number;
+  discountBaht?: number;
+  discountPercent?: number;
   size?: string | null;
   materials?: string | null;
   color?: string | null;
@@ -126,9 +120,8 @@ interface SoBody {
   deposit?: number;
   notes?: string;
   poRef?: string;
-  discount?: number;
-  discountType?: "AMOUNT" | "PERCENT";
-  discountValue?: number;
+  discountBaht?: number;
+  discountPercent?: number;
   items: SoItemBody[];
   salespersonId?: number;
   bookNo?: string | null;
@@ -291,9 +284,8 @@ export async function salesOrderRoutes(app: FastifyInstance): Promise<void> {
           deposit: body.deposit,
           notes: body.notes,
           poRef: body.poRef,
-          discount: body.discount,
-          discountType: body.discountType,
-          discountValue: body.discountValue,
+          discountBaht: body.discountBaht,
+          discountPercent: body.discountPercent,
           maxDiscountPercent: user.discountMaxPercent,
           items: body.items,
           ...bookingArgs(body),
@@ -341,9 +333,8 @@ export async function salesOrderRoutes(app: FastifyInstance): Promise<void> {
           deposit: body.deposit,
           notes: body.notes,
           poRef: body.poRef,
-          discount: body.discount,
-          discountType: body.discountType,
-          discountValue: body.discountValue,
+          discountBaht: body.discountBaht,
+          discountPercent: body.discountPercent,
           maxDiscountPercent: user.discountMaxPercent,
           items: body.items,
           ...bookingArgs(body),

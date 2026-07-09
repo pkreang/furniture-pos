@@ -16,38 +16,38 @@ const branches = ref<Branch[]>([]);
 const error = ref<string | null>(null);
 const busy = ref(false);
 
-type DiscountType = "AMOUNT" | "PERCENT";
 interface QLine {
   productId: number;
   quantity: number;
-  discount: number;
-  discountType: DiscountType;
+  discountBaht: number;
+  discountPercent: number;
 }
 
-/** Resolves a baht/percent discount to baht, clamped to [0, base]. */
-function resolveDisc(type: DiscountType, value: number, base: number): number {
-  if (base <= 0 || value <= 0) return 0;
-  const raw = type === "PERCENT" ? Math.round((base * value) / 100) : Math.round(value);
-  return Math.min(Math.max(raw, 0), base);
+/** Net after a baht discount first, then a percent off the remainder. */
+function discountedNet(base: number, baht: number, percent: number): number {
+  if (base <= 0) return 0;
+  const amt = Math.min(Math.max(Math.round(baht || 0), 0), base);
+  const after = base - amt;
+  const pct = Math.min(Math.max(percent || 0, 0), 100);
+  return after - Math.round((after * pct) / 100);
 }
 
 const branchId = ref(0);
 const lines = ref<QLine[]>([]);
 const pickProductId = ref(0);
-const orderDiscount = ref(0);
-const orderDiscountType = ref<DiscountType>("AMOUNT");
+const orderDiscountBaht = ref(0);
+const orderDiscountPercent = ref(0);
 
 const productById = computed(() => new Map(products.value.map((p) => [p.id, p])));
 function lineTotal(l: QLine): number {
   const gross = (productById.value.get(l.productId)?.basePrice ?? 0) * l.quantity;
-  return Math.max(0, gross - resolveDisc(l.discountType, l.discount || 0, gross));
+  return discountedNet(gross, l.discountBaht, l.discountPercent);
 }
 const subtotal = computed(() => lines.value.reduce((s, l) => s + lineTotal(l), 0));
-const orderDiscountResolved = computed(() =>
-  resolveDisc(orderDiscountType.value, orderDiscount.value || 0, subtotal.value),
-);
 // Prices are VAT-inclusive: total = lines − order discount, VAT extracted out.
-const total = computed(() => Math.max(0, subtotal.value - orderDiscountResolved.value));
+const total = computed(() =>
+  discountedNet(subtotal.value, orderDiscountBaht.value, orderDiscountPercent.value),
+);
 const taxBase = computed(() => Math.round(total.value / 1.07));
 const vatAmount = computed(() => total.value - taxBase.value);
 
@@ -55,7 +55,7 @@ function addLine(): void {
   if (!pickProductId.value) return;
   const existing = lines.value.find((l) => l.productId === pickProductId.value);
   if (existing) existing.quantity += 1;
-  else lines.value.push({ productId: pickProductId.value, quantity: 1, discount: 0, discountType: "AMOUNT" });
+  else lines.value.push({ productId: pickProductId.value, quantity: 1, discountBaht: 0, discountPercent: 0 });
 }
 
 function removeLine(productId: number): void {
@@ -72,13 +72,13 @@ async function submit(): Promise<void> {
   try {
     const quote = await createQuotation({
       branchId: branchId.value,
-      discountType: orderDiscountType.value,
-      discountValue: Number(orderDiscount.value) || 0,
+      discountBaht: Number(orderDiscountBaht.value) || 0,
+      discountPercent: Number(orderDiscountPercent.value) || 0,
       items: lines.value.map((l) => ({
         productId: l.productId,
         quantity: l.quantity,
-        discountType: l.discountType,
-        discountValue: Number(l.discount) || 0,
+        discountBaht: Number(l.discountBaht) || 0,
+        discountPercent: Number(l.discountPercent) || 0,
       })),
     });
     router.push(`/quotations/${quote.id}`);
@@ -138,11 +138,10 @@ onMounted(async () => {
             <td><input v-model.number="l.quantity" type="number" min="1" class="input w-20" /></td>
             <td>
               <div class="flex items-center gap-1">
-                <input v-model.number="l.discount" type="number" min="0" class="input w-20" />
-                <select v-model="l.discountType" class="input w-14 px-1">
-                  <option value="AMOUNT">฿</option>
-                  <option value="PERCENT">%</option>
-                </select>
+                <input v-model.number="l.discountBaht" type="number" min="0" class="input w-16" title="ส่วนลดบาท" />
+                <span class="text-xs text-slate-400">฿</span>
+                <input v-model.number="l.discountPercent" type="number" min="0" max="100" class="input w-14" title="ส่วนลด %" />
+                <span class="text-xs text-slate-400">%</span>
               </div>
             </td>
             <td class="text-right">{{ lineTotal(l).toLocaleString() }}</td>
@@ -157,12 +156,12 @@ onMounted(async () => {
         <span>{{ subtotal.toLocaleString() }}</span>
       </div>
       <div class="form-row mb-1 flex items-center justify-between gap-2">
-        <label class="mb-0 flex-1">{{ t("discount") }}</label>
-        <input v-model.number="orderDiscount" type="number" min="0" class="input w-20 text-right" />
-        <select v-model="orderDiscountType" class="input w-14 px-1">
-          <option value="AMOUNT">฿</option>
-          <option value="PERCENT">%</option>
-        </select>
+        <label class="mb-0 flex-1">{{ t("discount") }} ฿</label>
+        <input v-model.number="orderDiscountBaht" type="number" min="0" class="input w-24 text-right" />
+      </div>
+      <div class="form-row mb-1 flex items-center justify-between gap-2">
+        <label class="mb-0 flex-1">{{ t("discount") }} %</label>
+        <input v-model.number="orderDiscountPercent" type="number" min="0" max="100" class="input w-24 text-right" />
       </div>
       <div class="flex justify-between py-1 font-semibold text-slate-800 dark:text-slate-200">
         <span>{{ t("total") }}</span>
